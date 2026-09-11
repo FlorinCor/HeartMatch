@@ -7,9 +7,9 @@
     <feGaussianBlur stdDeviation="12" result="blur"/>
     <feComposite in="SourceGraphic" in2="blur" operator="over"/>
 </filter><radialGradient id="bodyGrad_RED" cx="35%" cy="35%" r="65%">
-    <stop offset="0%" stop-color="#FF5277"/>
-    <stop offset="55%" stop-color="#E91E63"/>
-    <stop offset="100%" stop-color="#880E4F"/>
+    <stop offset="0%" stop-color="#FF5252"/>
+    <stop offset="55%" stop-color="#D50000"/>
+    <stop offset="100%" stop-color="#7F0000"/>
 </radialGradient>
 <linearGradient id="bevelGrad_RED" x1="0%" y1="0%" x2="0%" y2="100%">
     <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.6"/>
@@ -29,7 +29,7 @@
 <path d="M 160,96 C 120,96 88,130 96,176 C 104,220 148,260 176,260 C 196,260 172,200 164,168 C 156,136 172,112 200,104 C 188,98 174,96 160,96 Z" fill="url(#glossGrad)"/>
 <path d="M 320,100 C 352,100 376,120 380,150 C 384,178 360,196 348,196 C 336,196 344,168 340,148 C 336,128 324,112 310,104 C 314,101 317,100 320,100 Z" fill="url(#glossGrad)" opacity="0.65"/>
 <!-- Bottom Rim Ambient Glow -->
-<ellipse cx="256" cy="400" rx="90" ry="24" fill="#FF5277" opacity="0.25" filter="blur(8px)"/><!-- Selected State: Glowing Pulse Halo & Gold Border -->
+<ellipse cx="256" cy="400" rx="90" ry="24" fill="#FF5252" opacity="0.25" filter="blur(8px)"/><!-- Selected State: Glowing Pulse Halo & Gold Border -->
 <path d="M 256,440 C 248,432 100,320 60,220 C 24,130 84,64 168,64 C 212,64 242,92 256,116 C 270,92 300,64 344,64 C 428,64 488,130 452,220 C 412,320 264,432 256,440 Z" fill="none" stroke="#FFD700" stroke-width="16" filter="url(#glowEffect)"/>
 <path d="M 256,440 C 248,432 100,320 60,220 C 24,130 84,64 168,64 C 212,64 242,92 256,116 C 270,92 300,64 344,64 C 428,64 488,130 452,220 C 412,320 264,432 256,440 Z" fill="#FFFFFF" opacity="0.15"/>
                 </g>

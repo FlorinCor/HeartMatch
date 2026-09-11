@@ -63,8 +63,8 @@ object SvgAssetGenerator {
 
     private fun generateNormalHeartContent(color: HeartColor, defs: StringBuilder, body: StringBuilder) {
         val (lightHex, mainHex, darkHex, glossHex) = when (color) {
-            HeartColor.RED -> listOf("#FF5277", "#E91E63", "#880E4F", "#FFD4E0")
-            HeartColor.PINK -> listOf("#FF80AB", "#FF4081", "#C2185B", "#FFE0EB")
+            HeartColor.RED -> listOf("#FF5252", "#D50000", "#7F0000", "#FFCDD2")
+            HeartColor.PINK -> listOf("#FFB2D6", "#FF4081", "#AD1457", "#FFF0F5")
             HeartColor.BLUE -> listOf("#40C4FF", "#0091EA", "#01579B", "#E1F5FE")
             HeartColor.GREEN -> listOf("#69F0AE", "#00E676", "#007E33", "#E8F5E9")
             HeartColor.YELLOW -> listOf("#FFFF00", "#FFD600", "#FF6D00", "#FFFDE7")

@@ -48,6 +48,12 @@ class FrontendSystemTest {
 
         val redGradients = HeartColor.RED.getGradients()
         assertEquals(HeartColors.RedMain, redGradients.second)
+
+        val pinkGradients = HeartColor.PINK.getGradients()
+        assertEquals(HeartColors.PinkMain, pinkGradients.second)
+        assertNotEquals(redGradients.first, pinkGradients.first)
+        assertNotEquals(redGradients.second, pinkGradients.second)
+        assertNotEquals(redGradients.third, pinkGradients.third)
     }
 
     @Test

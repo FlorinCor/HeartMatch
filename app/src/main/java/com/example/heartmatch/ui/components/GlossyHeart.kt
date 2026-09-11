@@ -42,15 +42,15 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 object HeartColors {
-    val RedLight = Color(0xFFFF5277)
-    val RedMain = Color(0xFFE91E63)
-    val RedDark = Color(0xFF880E4F)
-    val RedGloss = Color(0xFFFFD4E0)
+    val RedLight = Color(0xFFFF5252)
+    val RedMain = Color(0xFFD50000)
+    val RedDark = Color(0xFF7F0000)
+    val RedGloss = Color(0xFFFFCDD2)
 
-    val PinkLight = Color(0xFFFF80AB)
+    val PinkLight = Color(0xFFFFB2D6)
     val PinkMain = Color(0xFFFF4081)
-    val PinkDark = Color(0xFFC2185B)
-    val PinkGloss = Color(0xFFFFE0EB)
+    val PinkDark = Color(0xFFAD1457)
+    val PinkGloss = Color(0xFFFFF0F5)
 
     val BlueLight = Color(0xFF40C4FF)
     val BlueMain = Color(0xFF0091EA)
