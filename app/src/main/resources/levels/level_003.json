@@ -1,0 +1,28 @@
+{
+  "id": 3,
+  "name": "High Hopes",
+  "difficulty": "EASY",
+  "board": {
+    "rows": 7,
+    "columns": 7,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 25,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN"],
+  "starThresholds": [8000, 12000, 18000],
+  "randomSeed": 3,
+  "objectives": [
+    {
+      "type": "SCORE",
+      "amount": 8000
+    }
+  ]
+}

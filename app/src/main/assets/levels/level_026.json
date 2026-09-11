@@ -1,0 +1,34 @@
+{
+  "id": 26,
+  "name": "First Frost",
+  "difficulty": "MEDIUM",
+  "board": {
+    "rows": 7,
+    "columns": 7,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "I(BLUE)", "O", "I(BLUE)", "O", "O"],
+      ["O", "O", "I(RED)", "O", "I(RED)", "O", "O"],
+      ["O", "O", "I(BLUE)", "O", "I(BLUE)", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN"],
+  "starThresholds": [8000, 15000, 22000],
+  "randomSeed": 26,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 6
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "BLUE",
+      "amount": 20
+    }
+  ]
+}

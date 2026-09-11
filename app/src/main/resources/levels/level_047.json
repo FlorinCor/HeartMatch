@@ -1,0 +1,34 @@
+{
+  "id": 47,
+  "name": "Shadow Twins",
+  "difficulty": "MEDIUM",
+  "board": {
+    "rows": 8,
+    "columns": 8,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "I(RED)", "I(BLUE)", "I(RED)", "I(BLUE)", "O", "O"],
+      ["O", "O", "I(BLUE)", "I(RED)", "I(BLUE)", "I(RED)", "O", "O"],
+      ["O", "D", "D", "O", "O", "D", "D", "O"],
+      ["O", "D", "D", "O", "O", "D", "D", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 23,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [12000, 21000, 31000],
+  "randomSeed": 47,
+  "objectives": [
+    {
+      "type": "CLEAR_DARK",
+      "amount": 4
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 4
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": 15,
+  "name": "Granite Pillars",
+  "difficulty": "MEDIUM",
+  "board": {
+    "rows": 8,
+    "columns": 8,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "S2", "O", "O", "S2", "O", "O"],
+      ["O", "O", "S2", "O", "O", "S2", "O", "O"],
+      ["O", "O", "S2", "O", "O", "S2", "O", "O"],
+      ["O", "O", "S2", "O", "O", "S2", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 26,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [10000, 18000, 26000],
+  "randomSeed": 15,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 8
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "GREEN",
+      "amount": 20
+    }
+  ]
+}

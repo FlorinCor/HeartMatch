@@ -1,0 +1,33 @@
+{
+  "id": 23,
+  "name": "Mended Bridges",
+  "difficulty": "MEDIUM",
+  "board": {
+    "rows": 8,
+    "columns": 8,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "BR(RED)", "BR(BLUE)", "BR(RED)", "BR(BLUE)", "O", "O"],
+      ["O", "O", "BR(BLUE)", "BR(RED)", "BR(BLUE)", "BR(RED)", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 25,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [16000, 24000, 34000],
+  "randomSeed": 23,
+  "objectives": [
+    {
+      "type": "REPAIR",
+      "amount": 8
+    },
+    {
+      "type": "SCORE",
+      "amount": 16000
+    }
+  ]
+}

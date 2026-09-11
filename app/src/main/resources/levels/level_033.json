@@ -1,0 +1,35 @@
+{
+  "id": 33,
+  "name": "Dense Lumber",
+  "difficulty": "MEDIUM",
+  "board": {
+    "rows": 8,
+    "columns": 8,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "W2", "W2", "O", "O", "O"],
+      ["O", "W2", "W2", "O", "O", "W2", "W2", "O"],
+      ["O", "W2", "W2", "O", "O", "W2", "W2", "O"],
+      ["O", "O", "O", "W2", "W2", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [11000, 19000, 28000],
+  "randomSeed": 33,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 8
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "BOMB",
+      "amount": 2
+    }
+  ]
+}

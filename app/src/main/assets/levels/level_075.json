@@ -1,0 +1,40 @@
+{
+  "id": 75,
+  "name": "Labyrinth of Iron",
+  "difficulty": "HARD",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "W2", "W2", "W2", "W2", "O", "O", "O"],
+      ["O", "O", "W2", "W2", "W2", "W2", "O", "O", "O"],
+      ["O", "O", "C(YELLOW)", "C(BLUE)", "C(YELLOW)", "C(BLUE)", "O", "O", "O"],
+      ["O", "O", "C(BLUE)", "C(YELLOW)", "C(BLUE)", "C(YELLOW)", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "D", "D", "D", "D", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 23,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [22000, 36000, 56000],
+  "randomSeed": 75,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "CHAINED",
+      "amount": 8
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 8
+    },
+    {
+      "type": "CLEAR_DARK",
+      "amount": 4
+    }
+  ]
+}

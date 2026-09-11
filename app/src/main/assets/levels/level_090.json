@@ -1,0 +1,40 @@
+{
+  "id": 90,
+  "name": "The Four Elements",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "S2", "S2", "S2", "I(RED)", "I(BLUE)", "I(RED)", "O"],
+      ["O", "O", "S2", "S2", "S2", "I(BLUE)", "I(RED)", "I(BLUE)", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "W2", "W2", "W2", "O", "O", "O"],
+      ["O", "O", "O", "W2", "W2", "W2", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "D", "D", "D", "D", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [30000, 50000, 75000],
+  "randomSeed": 90,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 6
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 6
+    },
+    {
+      "type": "CLEAR_DARK",
+      "amount": 4
+    }
+  ]
+}

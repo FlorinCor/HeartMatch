@@ -1,0 +1,40 @@
+{
+  "id": 16,
+  "name": "Treasure Chest",
+  "difficulty": "MEDIUM",
+  "board": {
+    "rows": 8,
+    "columns": 8,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "S1", "GIFT", "S1", "S1", "O", "O"],
+      ["O", "O", "S1", "S1", "GIFT", "S1", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 25,
+  "availableColors": ["RED", "PINK", "BLUE", "YELLOW"],
+  "starThresholds": [11000, 19000, 28000],
+  "randomSeed": 16,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 6
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "GIFT",
+      "amount": 2
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "RED",
+      "amount": 20
+    }
+  ]
+}

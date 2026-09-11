@@ -1,0 +1,8 @@
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+                <g id="ui-root">
+                    <path d="M 80,180 L 220,180 L 320,340 L 420,340" fill="none" stroke="#7C4DFF" stroke-width="28" stroke-linecap="round"/>
+<polygon points="420,340 380,310 380,370" fill="#7C4DFF"/>
+<path d="M 80,340 L 220,340 L 320,180 L 420,180" fill="none" stroke="#FF4081" stroke-width="28" stroke-linecap="round"/>
+<polygon points="420,180 380,150 380,210" fill="#FF4081"/>
+                </g>
+            </svg>

@@ -1,0 +1,40 @@
+{
+  "id": 78,
+  "name": "Thorny Citadel",
+  "difficulty": "HARD",
+  "board": {
+    "rows": 8,
+    "columns": 8,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "B", "B", "B", "O", "O"],
+      ["O", "O", "B", "B", "B", "B", "O", "O"],
+      ["O", "O", "C(BLUE)", "C(GREEN)", "C(BLUE)", "C(GREEN)", "O", "O"],
+      ["O", "O", "C(GREEN)", "C(BLUE)", "C(GREEN)", "C(BLUE)", "O", "O"],
+      ["O", "O", "I(PINK)", "I(YELLOW)", "I(PINK)", "I(YELLOW)", "O", "O"],
+      ["O", "O", "I(YELLOW)", "I(PINK)", "I(YELLOW)", "I(PINK)", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 22,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [21000, 35000, 54000],
+  "randomSeed": 78,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "BARBED",
+      "amount": 8
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "CHAINED",
+      "amount": 8
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 8
+    }
+  ]
+}

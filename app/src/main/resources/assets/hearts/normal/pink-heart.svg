@@ -1,0 +1,34 @@
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+                <defs>
+                    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="0.35"/>
+</filter>
+<filter id="glowEffect" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="12" result="blur"/>
+    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+</filter><radialGradient id="bodyGrad_PINK" cx="35%" cy="35%" r="65%">
+    <stop offset="0%" stop-color="#FF80AB"/>
+    <stop offset="55%" stop-color="#FF4081"/>
+    <stop offset="100%" stop-color="#C2185B"/>
+</radialGradient>
+<linearGradient id="bevelGrad_PINK" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.6"/>
+    <stop offset="100%" stop-color="#000000" stop-opacity="0.4"/>
+</linearGradient>
+<radialGradient id="glossGrad" cx="30%" cy="30%" r="50%">
+    <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85"/>
+    <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.0"/>
+</radialGradient>
+                </defs>
+                <g id="heart-root">
+                    <!-- Drop Shadow & Base Heart Body -->
+<path d="M 256,440 C 248,432 100,320 60,220 C 24,130 84,64 168,64 C 212,64 242,92 256,116 C 270,92 300,64 344,64 C 428,64 488,130 452,220 C 412,320 264,432 256,440 Z" fill="url(#bodyGrad_PINK)" filter="url(#dropShadow)"/>
+<!-- 3D Bevel Border -->
+<path d="M 256,440 C 248,432 100,320 60,220 C 24,130 84,64 168,64 C 212,64 242,92 256,116 C 270,92 300,64 344,64 C 428,64 488,130 452,220 C 412,320 264,432 256,440 Z" fill="none" stroke="url(#bevelGrad_PINK)" stroke-width="8" opacity="0.7"/>
+<!-- Specular Glossy Highlights -->
+<path d="M 160,96 C 120,96 88,130 96,176 C 104,220 148,260 176,260 C 196,260 172,200 164,168 C 156,136 172,112 200,104 C 188,98 174,96 160,96 Z" fill="url(#glossGrad)"/>
+<path d="M 320,100 C 352,100 376,120 380,150 C 384,178 360,196 348,196 C 336,196 344,168 340,148 C 336,128 324,112 310,104 C 314,101 317,100 320,100 Z" fill="url(#glossGrad)" opacity="0.65"/>
+<!-- Bottom Rim Ambient Glow -->
+<ellipse cx="256" cy="400" rx="90" ry="24" fill="#FF80AB" opacity="0.25" filter="blur(8px)"/>
+                </g>
+            </svg>

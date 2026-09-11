@@ -1,0 +1,8 @@
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+                <g id="effect-root">
+                    <path d="M 256,40 Q 380,180 256,280 Q 132,380 256,480" fill="none" stroke="#40C4FF" stroke-width="32" stroke-linecap="round"/>
+<polygon points="256,490 220,440 292,440" fill="#40C4FF"/>
+<circle cx="200" cy="140" r="24" fill="#FFEB3B"/>
+<circle cx="320" cy="320" r="24" fill="#FFEB3B"/>
+                </g>
+            </svg>

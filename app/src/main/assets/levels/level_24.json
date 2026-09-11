@@ -1,0 +1,34 @@
+{
+  "id": 24,
+  "name": "Shattered Pathway",
+  "difficulty": "MEDIUM",
+  "board": {
+    "rows": 8,
+    "columns": 8,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "S1", "S1", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "BR(RED)", "BR(PINK)", "BR(RED)", "BR(PINK)", "BR(BLUE)", "BR(GREEN)", "O"],
+      ["O", "BR(PINK)", "BR(RED)", "BR(PINK)", "BR(RED)", "BR(GREEN)", "BR(BLUE)", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "S1", "S1", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [10000, 18000, 26000],
+  "randomSeed": 24,
+  "objectives": [
+    {
+      "type": "REPAIR",
+      "amount": 8
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 4
+    }
+  ]
+}

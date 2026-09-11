@@ -1,0 +1,33 @@
+{
+  "id": 41,
+  "name": "Shadow Awakens",
+  "difficulty": "MEDIUM",
+  "board": {
+    "rows": 7,
+    "columns": 7,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "D", "O", "O", "O", "D", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 22,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [8000, 15000, 22000],
+  "randomSeed": 41,
+  "objectives": [
+    {
+      "type": "CLEAR_DARK",
+      "amount": 2
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "RED",
+      "amount": 20
+    }
+  ]
+}

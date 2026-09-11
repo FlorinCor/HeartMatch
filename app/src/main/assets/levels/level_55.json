@@ -1,0 +1,34 @@
+{
+  "id": 55,
+  "name": "Shadow Bloom",
+  "difficulty": "HARD",
+  "board": {
+    "rows": 8,
+    "columns": 8,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "GIFT", "O", "O", "O", "O", "GIFT", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "D", "D", "D", "D", "O", "O", "O"],
+      ["O", "D", "D", "D", "D", "O", "O", "O"],
+      ["O", "O", "D", "D", "D", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 23,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [16000, 26000, 40000],
+  "randomSeed": 55,
+  "objectives": [
+    {
+      "type": "CLEAR_DARK",
+      "amount": 7
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "GIFT",
+      "amount": 2
+    }
+  ]
+}

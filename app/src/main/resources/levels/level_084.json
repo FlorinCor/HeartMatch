@@ -1,0 +1,40 @@
+{
+  "id": 84,
+  "name": "The Triple Lock",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 8,
+    "columns": 8,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "C(BLUE)", "C(RED)", "C(BLUE)", "C(RED)", "O", "O"],
+      ["O", "O", "C(RED)", "C(BLUE)", "C(RED)", "C(BLUE)", "O", "O"],
+      ["O", "O", "I(YELLOW)", "I(GREEN)", "I(YELLOW)", "I(GREEN)", "O", "O"],
+      ["O", "O", "I(GREEN)", "I(YELLOW)", "I(GREEN)", "I(YELLOW)", "O", "O"],
+      ["O", "O", "S2", "S2", "S2", "O", "O", "O"],
+      ["O", "O", "S2", "S2", "S2", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 21,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [23000, 38000, 60000],
+  "randomSeed": 84,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "CHAINED",
+      "amount": 8
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 8
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 6
+    }
+  ]
+}

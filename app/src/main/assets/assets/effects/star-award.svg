@@ -1,0 +1,6 @@
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+                <g id="effect-root">
+                    <polygon points="256,20 326,170 492,180 366,290 406,452 256,366 106,452 146,290 20,180 186,170" fill="#FFD600" stroke="#FF6D00" stroke-width="14"/>
+<polygon points="256,80 300,190 410,200 326,270 354,380 256,320 158,380 186,270 102,200 212,190" fill="#FFF59D"/>
+                </g>
+            </svg>

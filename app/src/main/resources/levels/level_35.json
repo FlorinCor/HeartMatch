@@ -1,0 +1,35 @@
+{
+  "id": 35,
+  "name": "Lumberjack's Maze",
+  "difficulty": "MEDIUM",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "W2", "W2", "W2", "W2", "W2", "O", "O"],
+      ["O", "O", "W2", "O", "O", "O", "W2", "O", "O"],
+      ["O", "O", "W2", "O", "O", "O", "W2", "O", "O"],
+      ["O", "O", "W2", "O", "O", "O", "W2", "O", "O"],
+      ["O", "O", "W2", "W2", "W2", "W2", "W2", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 26,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [22000, 32000, 45000],
+  "randomSeed": 35,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 12
+    },
+    {
+      "type": "SCORE",
+      "amount": 22000
+    }
+  ]
+}

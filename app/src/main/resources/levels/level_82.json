@@ -1,0 +1,40 @@
+{
+  "id": 82,
+  "name": "Frozen Labyrinth",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 8,
+    "columns": 8,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "I(YELLOW)", "I(PINK)", "I(YELLOW)", "I(PINK)", "O", "O"],
+      ["O", "O", "I(PINK)", "I(YELLOW)", "I(PINK)", "I(YELLOW)", "O", "O"],
+      ["O", "O", "W2", "W2", "W2", "W2", "O", "O"],
+      ["O", "O", "W2", "W2", "W2", "W2", "O", "O"],
+      ["O", "O", "C(GREEN)", "C(BLUE)", "C(GREEN)", "O", "O", "O"],
+      ["O", "O", "C(BLUE)", "C(GREEN)", "C(BLUE)", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 21,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [21000, 36000, 56000],
+  "randomSeed": 82,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 8
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 8
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "CHAINED",
+      "amount": 6
+    }
+  ]
+}

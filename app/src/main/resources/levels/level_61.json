@@ -1,0 +1,34 @@
+{
+  "id": 61,
+  "name": "Chained Bonds",
+  "difficulty": "HARD",
+  "board": {
+    "rows": 7,
+    "columns": 7,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "C(BLUE)", "C(RED)", "O", "C(RED)", "C(BLUE)", "C(RED)"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 22,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [10000, 18000, 27000],
+  "randomSeed": 61,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "CHAINED",
+      "amount": 5
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "RED",
+      "amount": 20
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": 91,
+  "name": "Crown of Thorns",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "X", "O", "O", "O", "X", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "B", "B", "B", "O", "O", "O"],
+      ["O", "O", "B", "B", "B", "B", "O", "O", "O"],
+      ["O", "O", "C(PURPLE)", "C(PINK)", "C(PURPLE)", "C(PINK)", "O", "O", "O"],
+      ["O", "O", "C(PINK)", "C(PURPLE)", "C(PINK)", "C(PURPLE)", "O", "O", "O"],
+      ["O", "O", "O", "BR(BLUE)", "BR(RED)", "BR(BLUE)", "O", "O", "O"],
+      ["O", "O", "O", "BR(RED)", "BR(BLUE)", "BR(RED)", "O", "O", "O"],
+      ["X", "O", "O", "O", "O", "O", "O", "O", "X"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [28000, 46000, 72000],
+  "randomSeed": 91,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "BARBED",
+      "amount": 6
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "CHAINED",
+      "amount": 6
+    },
+    {
+      "type": "REPAIR",
+      "amount": 6
+    }
+  ]
+}

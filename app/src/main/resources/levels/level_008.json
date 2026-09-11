@@ -1,0 +1,39 @@
+{
+  "id": 8,
+  "name": "Crossroads",
+  "difficulty": "EASY",
+  "board": {
+    "rows": 7,
+    "columns": 7,
+    "grid": [
+      ["X", "X", "O", "O", "O", "X", "X"],
+      ["X", "X", "O", "O", "O", "X", "X"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O"],
+      ["X", "X", "O", "O", "O", "X", "X"],
+      ["X", "X", "O", "O", "O", "X", "X"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "GREEN", "YELLOW"],
+  "starThresholds": [6000, 11000, 17000],
+  "randomSeed": 8,
+  "objectives": [
+    {
+      "type": "COLLECT",
+      "heartType": "GREEN",
+      "amount": 15
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "YELLOW",
+      "amount": 15
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "RED",
+      "amount": 15
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": 40,
+  "name": "The Triad Citadel",
+  "difficulty": "HARD",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["X", "O", "O", "O", "O", "O", "O", "O", "X"],
+      ["O", "O", "O", "O", "S2", "O", "O", "O", "O"],
+      ["O", "O", "O", "BR(BLUE)", "BR(RED)", "BR(BLUE)", "O", "O", "O"],
+      ["O", "O", "O", "BR(RED)", "BR(BLUE)", "BR(RED)", "O", "O", "O"],
+      ["O", "O", "I(PINK)", "I(GREEN)", "I(PINK)", "W2", "W2", "W2", "O"],
+      ["O", "O", "I(GREEN)", "I(PINK)", "I(GREEN)", "W2", "W2", "W2", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "S2", "O", "O", "O", "O"],
+      ["X", "O", "O", "O", "O", "O", "O", "O", "X"]
+    ]
+  },
+  "moves": 26,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [25000, 38000, 55000],
+  "randomSeed": 40,
+  "objectives": [
+    {
+      "type": "REPAIR",
+      "amount": 6
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 6
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 6
+    }
+  ]
+}
