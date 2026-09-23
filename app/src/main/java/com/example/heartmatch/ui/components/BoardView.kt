@@ -64,27 +64,27 @@ fun BoardView(
             .fillMaxWidth()
             .aspectRatio(cols.toFloat() / rows.toFloat())
             .padding(12.dp)
-            .shadow(16.dp, RoundedCornerShape(24.dp))
+            .shadow(18.dp, RoundedCornerShape(20.dp))
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF2C103C).copy(alpha = 0.95f),
-                        Color(0xFF140824).copy(alpha = 0.98f)
+                        Color(0xFF3B2652),
+                        Color(0xFF261538)
                     )
                 ),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(20.dp)
             )
             .border(
                 width = 3.dp,
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFFFF80AB).copy(alpha = 0.6f),
-                        Color(0xFF880E4F).copy(alpha = 0.4f)
+                        Color(0xFF8B6BAE),
+                        Color(0xFF4A3166)
                     )
                 ),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(20.dp)
             )
-            .padding(8.dp),
+            .padding(7.dp),
         contentAlignment = Alignment.Center
     ) {
         val boardWidthPx = constraints.maxWidth.toFloat()
@@ -177,15 +177,30 @@ fun BoardView(
                     val cell = board[coord]
                     if (cell != null && cell.isPlayable) {
                         val isEven = (r + c) % 2 == 0
-                        val cellBg = if (isEven) Color(0x33FFFFFF) else Color(0x22FFFFFF)
+                        val cellTop = if (isEven) Color(0xFF5C4675) else Color(0xFF55406E)
+                        val cellBottom = if (isEven) Color(0xFF3F2C57) else Color(0xFF3A2852)
 
                         Box(
                             modifier = Modifier
                                 .offset { IntOffset((c * cellSizePx).roundToInt(), (r * cellSizePx).roundToInt()) }
                                 .size(cellSizeDp)
-                                .padding(2.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(cellBg)
+                                .padding(1.5.dp)
+                                .clip(RoundedCornerShape(7.dp))
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(cellTop, cellBottom)
+                                    )
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.White.copy(alpha = 0.22f),
+                                            Color.Black.copy(alpha = 0.30f)
+                                        )
+                                    ),
+                                    shape = RoundedCornerShape(7.dp)
+                                )
                         )
                     }
                 }

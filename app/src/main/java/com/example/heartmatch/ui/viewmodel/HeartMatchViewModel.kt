@@ -5,6 +5,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.heartmatch.audio.HapticEffect
 import com.example.heartmatch.audio.SoundEffect
 import com.example.heartmatch.audio.SoundManager
 import com.example.heartmatch.data.LevelRecord
@@ -13,6 +14,7 @@ import com.example.heartmatch.data.PlayerRepository
 import com.example.heartmatch.engine.core.HeartMatchEngine
 import com.example.heartmatch.engine.loader.LevelRepository
 import com.example.heartmatch.engine.model.BlockerType
+import com.example.heartmatch.engine.model.Board
 import com.example.heartmatch.engine.model.Coord
 import com.example.heartmatch.engine.model.EngineEvent
 import com.example.heartmatch.engine.model.FireDirection
@@ -23,6 +25,9 @@ import com.example.heartmatch.engine.model.LevelConfig
 import com.example.heartmatch.engine.model.MatchShape
 import com.example.heartmatch.engine.model.SpecialHeartType
 import com.example.heartmatch.engine.model.Tile
+import com.example.heartmatch.ui.animation.BoardDisplayState
+import com.example.heartmatch.ui.animation.TurnChoreographer
+import com.example.heartmatch.ui.animation.TurnStep
 import com.example.heartmatch.ui.components.BlastWaveData
 import com.example.heartmatch.ui.components.ComboBannerData
 import com.example.heartmatch.ui.components.HeartColors
@@ -55,6 +60,7 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
     private val playerRepository = PlayerRepository(application)
     private val levelRepository = LevelRepository(resourceClassLoader = application.classLoader)
     private val soundManager = SoundManager(application)
+    private val turnChoreographer = TurnChoreographer()
     private var engine = HeartMatchEngine()
 
     private val _currentScreen = MutableStateFlow<Screen>(Screen.Splash)
@@ -65,6 +71,10 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
 
     private val _gameState = MutableStateFlow<GameState?>(null)
     val gameState: StateFlow<GameState?> = _gameState.asStateFlow()
+
+    /** Board snapshot currently shown, replayed step by step while a turn is being animated. */
+    private val _boardDisplay = MutableStateFlow(BoardDisplayState())
+    val boardDisplay: StateFlow<BoardDisplayState> = _boardDisplay.asStateFlow()
 
     private val _selectedCoord = MutableStateFlow<Coord?>(null)
     val selectedCoord: StateFlow<Coord?> = _selectedCoord.asStateFlow()
@@ -104,14 +114,21 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
     val comboBanner: StateFlow<ComboBannerData?> = _comboBanner.asStateFlow()
 
     private var hintJob: Job? = null
+    private var turnJob: Job? = null
+    private val isTurnRunning: Boolean get() = turnJob?.isActive == true
 
     init {
         refreshProfile()
     }
 
     fun navigateTo(screen: Screen) {
-        soundManager.playSound(SoundEffect.BUTTON_CLICK)
+        playButtonFeedback()
         _currentScreen.value = screen
+    }
+
+    private fun playButtonFeedback() {
+        soundManager.playSound(SoundEffect.BUTTON_CLICK)
+        soundManager.haptic(HapticEffect.BUTTON)
     }
 
     fun refreshProfile() {
@@ -129,7 +146,7 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun showLevelPreview(levelId: Int) {
-        soundManager.playSound(SoundEffect.BUTTON_CLICK)
+        playButtonFeedback()
         _previewLevelId.value = levelId
     }
 
@@ -138,7 +155,7 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun startLevel(levelId: Int) {
-        soundManager.playSound(SoundEffect.BUTTON_CLICK)
+        playButtonFeedback()
         _previewLevelId.value = null
         _victoryData.value = null
         _defeatData.value = null
@@ -147,10 +164,11 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
         _activeBooster.value = null
         _isPaused.value = false
 
+        turnJob?.cancel()
         val config = levelRepository.getLevel(levelId)
         engine = HeartMatchEngine(config)
-        engine.addEventListener { event -> handleEngineEvent(event) }
         _gameState.value = engine.getState()
+        publishBoard(engine.getState().board)
         _currentScreen.value = Screen.Gameplay
 
         startHintTimer()
@@ -158,23 +176,27 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
 
     fun onCellClick(coord: Coord) {
         val state = _gameState.value ?: return
-        if (state.status != GameStatus.READY_FOR_INPUT) return
+        if (state.status != GameStatus.READY_FOR_INPUT || isTurnRunning) return
 
         val selected = _selectedCoord.value
         if (selected == null) {
             _selectedCoord.value = coord
-            soundManager.playSound(SoundEffect.SWAP)
-            soundManager.vibrate(15)
+            playSelectFeedback()
         } else if (selected == coord) {
             _selectedCoord.value = null
+            soundManager.haptic(HapticEffect.SELECT)
         } else if (selected.isAdjacentTo(coord)) {
             _selectedCoord.value = null
             executeSwap(selected, coord)
         } else {
             _selectedCoord.value = coord
-            soundManager.playSound(SoundEffect.SWAP)
-            soundManager.vibrate(15)
+            playSelectFeedback()
         }
+    }
+
+    private fun playSelectFeedback() {
+        soundManager.playSound(SoundEffect.SELECT)
+        soundManager.haptic(HapticEffect.SELECT)
     }
 
     fun onSwap(from: Coord, to: Coord) {
@@ -184,37 +206,75 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
 
     private fun executeSwap(from: Coord, to: Coord) {
         val state = _gameState.value ?: return
-        if (state.status != GameStatus.READY_FOR_INPUT) return
+        if (state.status != GameStatus.READY_FOR_INPUT || isTurnRunning) return
 
         _hintedCoords.value = emptyList()
         hintJob?.cancel()
 
-        viewModelScope.launch {
+        turnJob = viewModelScope.launch {
+            val boardBefore = state.board.clone()
             val result = engine.swap(from, to)
-            _gameState.value = engine.getState()
-
-            if (!result.isSuccessfulMove) {
-                soundManager.playSound(SoundEffect.SWAP)
-                soundManager.vibrate(25)
-            }
+            val finalState = engine.getState()
+            val steps = turnChoreographer.build(boardBefore, result.events, finalState.board)
+            playTurn(steps)
+            // The replay always ends on the authoritative engine board.
+            publishBoard(finalState.board)
+            _gameState.value = finalState
             startHintTimer()
         }
     }
 
+    private suspend fun playTurn(steps: List<TurnStep>) {
+        for (step in steps) {
+            step.events.forEach { handleEngineEvent(it) }
+            _boardDisplay.value = when (step) {
+                is TurnStep.Swap -> nextDisplay(step.board, swapFrom = step.from, swapTo = step.to)
+                is TurnStep.Clear -> nextDisplay(step.board, vanishing = step.vanishing)
+                is TurnStep.Settle -> nextDisplay(step.board, popInIds = step.popInIds)
+                is TurnStep.Drop -> nextDisplay(step.board, fallOrigins = step.fallOrigins, popInIds = step.popInIds)
+                is TurnStep.Finish -> nextDisplay(step.board)
+            }
+            if (step.durationMs > 0) delay(step.durationMs)
+        }
+    }
+
+    private fun nextDisplay(
+        board: Board,
+        vanishing: Set<Coord> = emptySet(),
+        swapFrom: Coord? = null,
+        swapTo: Coord? = null,
+        fallOrigins: Map<String, Int> = emptyMap(),
+        popInIds: Set<String> = emptySet()
+    ): BoardDisplayState = BoardDisplayState(
+        board = board,
+        version = _boardDisplay.value.version + 1,
+        vanishingCoords = vanishing,
+        swapFrom = swapFrom,
+        swapTo = swapTo,
+        fallOrigins = fallOrigins,
+        popInIds = popInIds
+    )
+
+    /** Shows [board] as-is (no transition hints); a fresh clone is published so the UI always sees a new snapshot. */
+    private fun publishBoard(board: Board) {
+        _boardDisplay.value = nextDisplay(board.clone())
+    }
+
     fun activateBooster(boosterType: String) {
-        soundManager.playSound(SoundEffect.BUTTON_CLICK)
+        playButtonFeedback()
         val profile = _playerProfile.value
         when (boosterType) {
             "SHUFFLE" -> {
                 if (playerRepository.consumeBooster("SHUFFLE")) {
                     refreshProfile()
                     soundManager.playSound(SoundEffect.BOOSTER_USE)
-                    soundManager.vibrate(50)
+                    soundManager.haptic(HapticEffect.BOOSTER_USE)
                     val state = _gameState.value
-                    if (state != null) {
+                    if (state != null && !isTurnRunning) {
                         // Reshuffle board
                         engine.loadLevel(levelRepository.getLevel(state.levelId))
                         _gameState.value = engine.getState()
+                        publishBoard(engine.getState().board)
                     }
                 }
             }
@@ -222,7 +282,7 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
                 if (playerRepository.consumeBooster("EXTRA_MOVES")) {
                     refreshProfile()
                     soundManager.playSound(SoundEffect.BOOSTER_USE)
-                    soundManager.vibrate(50)
+                    soundManager.haptic(HapticEffect.BOOSTER_USE)
                     val state = _gameState.value
                     if (state != null) {
                         state.movesRemaining += 5
@@ -250,13 +310,13 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
         val state = _gameState.value ?: return
         val board = state.board
         val cell = board[coord] ?: return
-        if (!cell.isPlayable) return
+        if (!cell.isPlayable || isTurnRunning) return
 
         if (playerRepository.consumeBooster(booster)) {
             refreshProfile()
             _activeBooster.value = null
             soundManager.playSound(SoundEffect.BOOSTER_USE)
-            soundManager.vibrate(60)
+            soundManager.haptic(HapticEffect.BOOSTER_USE)
 
             when (booster) {
                 "HAMMER" -> {
@@ -280,22 +340,23 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
                 }
             }
             _gameState.value = engine.getState()
+            publishBoard(board)
         }
     }
 
     fun togglePause() {
-        soundManager.playSound(SoundEffect.BUTTON_CLICK)
+        playButtonFeedback()
         _isPaused.value = !_isPaused.value
     }
 
     fun resumeGame() {
-        soundManager.playSound(SoundEffect.BUTTON_CLICK)
+        playButtonFeedback()
         _isPaused.value = false
     }
 
     fun claimDailyReward(day: Int, rewardCoins: Int, boosterType: String? = null) {
         soundManager.playSound(SoundEffect.STAR_EARNED)
-        soundManager.vibrate(60)
+        soundManager.haptic(HapticEffect.REWARD)
         playerRepository.claimDailyReward(day, rewardCoins, boosterType)
         refreshProfile()
     }
@@ -315,8 +376,13 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
     private fun handleEngineEvent(event: EngineEvent) {
         when (event) {
             is EngineEvent.Swap -> {
-                soundManager.playSound(SoundEffect.SWAP)
-                soundManager.vibrate(20)
+                if (event.isRollback) {
+                    soundManager.playSound(SoundEffect.INVALID_MOVE)
+                    soundManager.haptic(HapticEffect.INVALID_MOVE)
+                } else {
+                    soundManager.playSound(SoundEffect.SWAP)
+                    soundManager.haptic(HapticEffect.SWAP)
+                }
             }
             is EngineEvent.Match -> {
                 val colorTriple = when (event.color) {
@@ -331,8 +397,12 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
                 event.coords.forEach { coord ->
                     triggerBurst(coord, colorTriple, 12)
                 }
-                soundManager.playSound(SoundEffect.MATCH, event.comboIndex)
-                soundManager.vibrate((30 + event.comboIndex * 10).toLong())
+                if (event.comboIndex == 0) {
+                    soundManager.playSound(SoundEffect.MATCH, 0)
+                } else {
+                    soundManager.playSound(SoundEffect.CASCADE, event.comboIndex - 1)
+                }
+                soundManager.haptic(HapticEffect.MATCH, event.comboIndex)
 
                 val scoreText = "+${event.coords.size * 50 * (event.comboIndex + 1)}"
                 val firstCoord = event.coords.firstOrNull() ?: Coord(0, 0)
@@ -350,8 +420,8 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
             }
             is EngineEvent.SpecialCreated -> {
                 triggerBurst(event.coord, Color(0xFFFFD700), 20)
-                soundManager.playSound(SoundEffect.STAR_EARNED)
-                soundManager.vibrate(40)
+                soundManager.playSound(SoundEffect.SPECIAL_CREATED)
+                soundManager.haptic(HapticEffect.SPECIAL_CREATED)
             }
             is EngineEvent.SpecialTriggered -> {
                 when (event.specialType) {
@@ -383,17 +453,17 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
                         soundManager.playSound(SoundEffect.STAR_EARNED)
                     }
                 }
-                soundManager.vibrate(70)
+                soundManager.haptic(HapticEffect.SPECIAL_TRIGGERED)
             }
             is EngineEvent.BlockerDamaged -> {
                 triggerBurst(event.coord, Color(0xFFCFD8DC), 10)
                 soundManager.playSound(SoundEffect.BLOCKER_HIT)
-                soundManager.vibrate(35)
+                soundManager.haptic(HapticEffect.BLOCKER_HIT)
             }
             is EngineEvent.BlockerDestroyed -> {
                 triggerBurst(event.coord, Color(0xFFFF5252), 20)
                 soundManager.playSound(SoundEffect.BLOCKER_DESTROY)
-                soundManager.vibrate(50)
+                soundManager.haptic(HapticEffect.BLOCKER_DESTROY)
             }
             is EngineEvent.GameWon -> {
                 val coinsAwarded = 50 + event.stars * 25
@@ -404,7 +474,7 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
                 viewModelScope.launch {
                     delay(600)
                     soundManager.playSound(SoundEffect.VICTORY)
-                    soundManager.vibrate(100)
+                    soundManager.haptic(HapticEffect.VICTORY)
                     _victoryData.value = VictoryData(
                         levelId = engine.getState().levelId,
                         score = event.finalScore,
@@ -417,7 +487,7 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
                 viewModelScope.launch {
                     delay(500)
                     soundManager.playSound(SoundEffect.GAME_OVER)
-                    soundManager.vibrate(80)
+                    soundManager.haptic(HapticEffect.GAME_OVER)
                     _defeatData.value = DefeatData(
                         levelId = engine.getState().levelId,
                         reason = event.reason
@@ -498,5 +568,10 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
 
     fun onLaserFinished(id: Long) {
         _laserBeams.value = _laserBeams.value.filterNot { it.id == id }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        soundManager.release()
     }
 }

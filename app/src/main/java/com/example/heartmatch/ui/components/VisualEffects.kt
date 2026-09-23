@@ -244,17 +244,22 @@ fun BlastWaveEffect(
         onFinished()
     }
 
-    val progress = radiusAnim.value / blast.maxRadius
+    val maxRadius = blast.maxRadius.coerceAtLeast(1f)
+    val progress = (radiusAnim.value / maxRadius).coerceIn(0f, 1f)
     val alpha = (1f - progress).coerceIn(0f, 1f)
 
     Canvas(modifier = Modifier.fillMaxSize()) {
+        // A radial gradient with a zero radius throws IllegalArgumentException on Android,
+        // and the animation starts from 0 – skip the very first (invisible) frame.
+        val radius = radiusAnim.value
+        if (radius <= 0f) return@Canvas
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(blast.color.copy(alpha = alpha * 0.7f), Color.White.copy(alpha = alpha * 0.9f), Color.Transparent),
                 center = blast.center,
-                radius = radiusAnim.value
+                radius = radius
             ),
-            radius = radiusAnim.value,
+            radius = radius,
             center = blast.center,
             style = Stroke(width = (8f * (1f - progress)).coerceAtLeast(1f), cap = StrokeCap.Round)
         )
