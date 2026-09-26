@@ -1,0 +1,36 @@
+{
+  "id": 144,
+  "name": "Moonlit Reef: Tidal Crossing",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "O", "D", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "O", "D", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "O", "D", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [35900, 56900, 83900],
+  "randomSeed": 144,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "BARBED",
+      "amount": 3
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "GREEN",
+      "amount": 22
+    }
+  ]
+}

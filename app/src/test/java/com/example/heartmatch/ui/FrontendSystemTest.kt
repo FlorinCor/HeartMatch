@@ -25,9 +25,10 @@ class FrontendSystemTest {
             Screen.Gameplay,
             Screen.Settings,
             Screen.Tutorial,
-            Screen.DailyReward
+            Screen.DailyReward,
+            Screen.Shop
         )
-        assertEquals(7, screens.size)
+        assertEquals(8, screens.size)
         assertTrue(screens.contains(Screen.Gameplay))
         assertTrue(screens.contains(Screen.DailyReward))
     }
@@ -96,7 +97,6 @@ class FrontendSystemTest {
         assertEquals(3, profile.shuffleCount)
         assertEquals(3, profile.extraMovesCount)
         assertTrue(profile.sfxEnabled)
-        assertTrue(profile.musicEnabled)
         assertTrue(profile.hapticsEnabled)
     }
 

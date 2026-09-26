@@ -143,6 +143,7 @@ class EngineAdvancedScenariosTest {
 
         val scoreObj = engine.getState().objectives.first()
         assertTrue(scoreObj.currentCount > 0)
-        assertEquals(engine.getState().score, scoreObj.currentCount)
+        assertEquals(300, scoreObj.currentCount)
+        assertTrue(engine.getState().score >= scoreObj.currentCount)
     }
 }

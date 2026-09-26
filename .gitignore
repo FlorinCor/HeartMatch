@@ -1,15 +1,27 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Android and Gradle generated files
+.gradle/
+.kotlin/
+**/build/
+.externalNativeBuild/
+.cxx/
 local.properties
+
+# IDE and operating-system metadata
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+.abacus.donotdelete
+
+# Local credentials and signing material
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+keystore.properties
+
+# Packaged outputs (source and Gradle wrapper remain versioned)
+*.apk
+*.aab
+*.hprof

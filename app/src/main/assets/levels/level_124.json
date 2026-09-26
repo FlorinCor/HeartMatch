@@ -1,0 +1,35 @@
+{
+  "id": 124,
+  "name": "Thornwood Reach: Tidal Crossing",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "BR(GREEN)", "O", "W2", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "BR(GREEN)", "O", "W2", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "BR(GREEN)", "O", "W2", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 25,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [32400, 51900, 77400],
+  "randomSeed": 124,
+  "objectives": [
+    {
+      "type": "REPAIR",
+      "amount": 3
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "GREEN",
+      "amount": 22
+    }
+  ]
+}

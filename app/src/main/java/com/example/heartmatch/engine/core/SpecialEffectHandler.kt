@@ -8,11 +8,30 @@ import com.example.heartmatch.engine.model.HeartColor
 import com.example.heartmatch.engine.model.SpecialCombinationType
 import com.example.heartmatch.engine.model.SpecialHeartType
 import com.example.heartmatch.engine.model.Tile
+import com.example.heartmatch.engine.model.ObjectiveConfig
+import com.example.heartmatch.engine.model.ObjectiveType
+import com.example.heartmatch.engine.model.BlockerType
 
 class SpecialEffectHandler(
     private val rng: DeterministicRng = DeterministicRng(),
     val defaultBombRadius: Int = 1
 ) {
+
+    var objectives: List<ObjectiveConfig> = emptyList()
+
+    /** Stable target order also makes the pre-activation preview faithful. */
+    fun targetPriority(board: Board, coord: Coord): Int {
+        val tile = board.getTile(coord)
+        val blocker = tile as? Tile.Blocker
+        val relevant = objectives.any { obj ->
+            (blocker != null && ((obj.targetBlocker == blocker.blockerType) ||
+                (obj.type == ObjectiveType.CLEAR_DARK_HEARTS && blocker.blockerType == BlockerType.DARK_HEART) ||
+                (obj.type == ObjectiveType.REPAIR_BROKEN && blocker.blockerType in listOf(BlockerType.BROKEN_HEART, BlockerType.STITCHED_HEART)))) ||
+                (obj.targetColor != null && obj.targetColor == tile?.matchColor) ||
+                (obj.targetSpecial == SpecialHeartType.GIFT_HEART && (tile as? Tile.Special)?.specialType == SpecialHeartType.GIFT_HEART) || coord in obj.targetCells
+        }
+        return (if (relevant) 100 else 0) + (if (blocker?.blockerType == BlockerType.DARK_HEART) 30 else 0) + (blocker?.durability ?: 0)
+    }
 
     data class SpecialActivationResult(
         val clearedCoords: Set<Coord>,
@@ -269,7 +288,7 @@ class SpecialEffectHandler(
     }
 
     /**
-     * FIRE + FIRE: Clears 3 full rows and 3 full columns centered on the target.
+     * FIRE + FIRE: Clears one full row and column centered on the target.
      */
     fun resolveFireFire(
         board: Board,
@@ -279,13 +298,13 @@ class SpecialEffectHandler(
         fireB: Tile.Special
     ): SpecialActivationResult {
         val affected = mutableSetOf<Coord>()
-        for (r in maxOf(0, to.row - 1)..minOf(board.rows - 1, to.row + 1)) {
+        for (r in to.row..to.row) {
             for (c in 0 until board.cols) {
                 val crd = Coord(r, c)
                 if (board[crd]?.isPlayable == true) affected.add(crd)
             }
         }
-        for (c in maxOf(0, to.col - 1)..minOf(board.cols - 1, to.col + 1)) {
+        for (c in to.col..to.col) {
             for (r in 0 until board.rows) {
                 val crd = Coord(r, c)
                 if (board[crd]?.isPlayable == true) affected.add(crd)
@@ -491,7 +510,7 @@ class SpecialEffectHandler(
                 }
 
                 SpecialHeartType.GIFT_HEART -> {
-                    // Gift Heart: clears a 3x3 diamond / cross plus 2 random bonus tiles and awards bonus points
+                    // Gift Heart: clears a 3x3 diamond / cross plus 2 objective-priority bonus tiles and awards bonus points
                     giftHeartsCount++
                     bonusScore += 1000
                     val set = mutableSetOf<Coord>()
@@ -500,7 +519,7 @@ class SpecialEffectHandler(
                     val otherPlayable = board.getAllPlayableCoords().filter { it !in set && it !in clearedSoFar }
                     if (otherPlayable.isNotEmpty()) {
                         val sampleCount = minOf(2, otherPlayable.size)
-                        val shuffled = otherPlayable.shuffled()
+                        val shuffled = otherPlayable.sortedWith(compareByDescending<Coord> { targetPriority(board, it) }.thenBy { it.row }.thenBy { it.col })
                         for (i in 0 until sampleCount) {
                             set.add(shuffled[i])
                         }
@@ -542,7 +561,20 @@ class SpecialEffectHandler(
                             blockersOnBoard.add(cell.coord)
                         }
                     }
-                    blockersOnBoard.take(5).forEach { set.add(it) }
+                    blockersOnBoard.sortedWith(compareByDescending<Coord> { targetPriority(board, it) }.thenBy { it.row }.thenBy { it.col }).take(5).forEach { set.add(it) }
+                    set
+                }
+
+                SpecialHeartType.LIGHT_HEART -> {
+                    // Light clears 3x3; the turn pipeline applies an extra blocker-layer hit in this area.
+                    bonusScore += 400
+                    val set = mutableSetOf<Coord>()
+                    for (r in (coord.row - 1)..(coord.row + 1)) {
+                        for (c in (coord.col - 1)..(coord.col + 1)) {
+                            val crd = Coord(r, c)
+                            if (board.isValid(crd) && board[crd]?.isPlayable == true) set.add(crd)
+                        }
+                    }
                     set
                 }
             }

@@ -1,0 +1,36 @@
+{
+  "id": 126,
+  "name": "Thornwood Reach: Coral Switchback",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "W2", "O", "O", "W2", "O", "O", "O"],
+      ["O", "O", "O", "W2", "O", "O", "W2", "O", "O"],
+      ["O", "O", "W2", "O", "O", "S2", "O", "O", "O"],
+      ["O", "O", "O", "S2", "O", "O", "S2", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 25,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [33000, 52500, 78000],
+  "randomSeed": 126,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 5
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 3
+    }
+  ]
+}

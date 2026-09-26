@@ -1,0 +1,35 @@
+{
+  "id": 154,
+  "name": "Moonlit Reef: Dancing Kelp",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "O", "B", "O", "D", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "O", "D", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "O", "D", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [38900, 59900, 86900],
+  "randomSeed": 154,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "BARBED",
+      "amount": 4
+    },
+    {
+      "type": "CLEAR_DARK",
+      "amount": 3
+    }
+  ]
+}

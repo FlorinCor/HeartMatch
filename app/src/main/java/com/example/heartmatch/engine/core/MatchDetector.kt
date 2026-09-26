@@ -150,6 +150,12 @@ class MatchDetector {
                 specialType = SpecialHeartType.RAINBOW_HEART
                 specialDirection = null
             }
+            intersectionCoords.isNotEmpty() && allCoords.size >= 6 -> {
+                // Large multi-line cluster (6+ tiles across intersecting spans) -> Light Heart (3x3 area clear)
+                shape = MatchShape.CROSS_OR_MULTI
+                specialType = SpecialHeartType.LIGHT_HEART
+                specialDirection = null
+            }
             intersectionCoords.isNotEmpty() -> {
                 // T-shape, L-shape, or cross
                 val isTShape = checkIsTShape(hSpans, vSpans, intersectionCoords)

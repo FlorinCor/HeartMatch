@@ -1,5 +1,6 @@
 package com.example.heartmatch.ui.components
 
+import com.example.heartmatch.ui.theme.GardenPalette
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -38,153 +39,34 @@ import com.example.heartmatch.engine.model.ObjectiveType
 import com.example.heartmatch.engine.model.SpecialHeartType
 import com.example.heartmatch.engine.model.Tile
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun TopHudView(
-    gameState: GameState,
-    modifier: Modifier = Modifier
-) {
-    val levelId = gameState.levelId
-    val movesRemaining = gameState.movesRemaining
-    val score = gameState.score
-    val (star1, star2, star3) = gameState.starThresholds
-    val maxStarScore = star3.toFloat().coerceAtLeast(1f)
-    val scoreProgress = (score.toFloat() / maxStarScore).coerceIn(0f, 1f)
-    val animatedProgress by animateFloatAsState(targetValue = scoreProgress, animationSpec = tween(400), label = "ScoreProgress")
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .shadow(12.dp, RoundedCornerShape(20.dp))
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF3F145B).copy(alpha = 0.95f),
-                        Color(0xFF1E0A30).copy(alpha = 0.98f)
-                    )
-                ),
-                shape = RoundedCornerShape(20.dp)
-            )
-            .border(
-                width = 2.dp,
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFFFF80AB).copy(alpha = 0.5f), Color(0xFFC2185B).copy(alpha = 0.3f))
-                ),
-                shape = RoundedCornerShape(20.dp)
-            )
-            .padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Top Row: Level Title, Moves Left, Score
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Level Badge
-            Column {
-                Text(
-                    text = "LEVEL $levelId",
-                    color = Color(0xFFFFD54F),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Black
-                )
-                Text(
-                    text = "Score: $score",
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
+fun TopHudView(gameState: GameState, modifier: Modifier = Modifier) {
+    val progress = (gameState.score.toFloat() / gameState.starThresholds.third.coerceAtLeast(1)).coerceIn(0f,1f)
+    val animatedProgress by animateFloatAsState(progress,tween(300),label="Score progress")
+    Column(modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=8.dp)
+        .background(GardenPalette.Panel,RoundedCornerShape(20.dp)).padding(12.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Level ${gameState.levelId}",color=GardenPalette.Ivory,fontSize=16.sp,fontWeight=FontWeight.Bold)
+                Text("Score ${gameState.score}",color=GardenPalette.Ivory.copy(alpha=0.7f),fontSize=12.sp)
             }
-
-            // Moves Badge (Circular Glowing)
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .shadow(8.dp, CircleShape)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = if (movesRemaining <= 5) listOf(Color(0xFFFF5252), Color(0xFFD50000))
-                            else listOf(Color(0xFFFF4081), Color(0xFFC2185B))
-                        ),
-                        shape = CircleShape
-                    )
-                    .border(2.5.dp, Color.White.copy(alpha = 0.9f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "$movesRemaining",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Black
-                    )
-                    Text(
-                        text = "MOVES",
-                        color = Color.White.copy(alpha = 0.85f),
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            // Earned Stars Display
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                for (i in 1..3) {
-                    val isEarned = score >= when (i) {
-                        1 -> star1
-                        2 -> star2
-                        else -> star3
-                    }
-                    val starColor by animateColorAsState(
-                        targetValue = if (isEarned) Color(0xFFFFD700) else Color(0xFF424242),
-                        animationSpec = tween(300),
-                        label = "StarColor$i"
-                    )
-                    Text(
-                        text = "★",
-                        color = starColor,
-                        fontSize = if (isEarned) 24.sp else 20.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(horizontal = 2.dp)
-                    )
-                }
+            Row(Modifier.background(if(gameState.movesRemaining<=5) GardenPalette.RoseDark else GardenPalette.Background,RoundedCornerShape(12.dp)).padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                Text("${gameState.movesRemaining}",color=GardenPalette.Ivory,fontSize=26.sp,fontWeight=FontWeight.Bold)
+                Text("Moves",color=GardenPalette.Ivory,fontSize=12.sp)
             }
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Star Progress Bar
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(10.dp)
-                .clip(RoundedCornerShape(5.dp))
-                .background(Color(0xFF212121))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(animatedProgress)
-                    .height(10.dp)
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(Color(0xFFFF4081), Color(0xFFFFD700))
-                        )
-                    )
-            )
+        androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+            gameState.objectives.forEach { ObjectiveIndicator(it,it.remainingCount,it.isFulfilled) }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Objectives Row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            gameState.objectives.forEach { objective ->
-                ObjectiveIndicator(objective = objective)
+        Text("Complete objectives: ★ · ★★ ${gameState.starThresholds.second} · ★★★ ${gameState.starThresholds.third}",
+            color=GardenPalette.Gold,fontSize=10.sp)
+        Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.weight(1f).height(5.dp).clip(RoundedCornerShape(3.dp)).background(GardenPalette.Background)) {
+                Box(Modifier.fillMaxWidth(animatedProgress).height(5.dp).background(GardenPalette.Gold))
             }
+            val thresholds = listOf(gameState.starThresholds.first,gameState.starThresholds.second,gameState.starThresholds.third)
+            thresholds.forEach { threshold -> Text("★",color=if(gameState.score>=threshold) GardenPalette.Gold else GardenPalette.Rim,fontSize=15.sp) }
         }
     }
 }
@@ -192,11 +74,10 @@ fun TopHudView(
 @Composable
 fun ObjectiveIndicator(
     objective: Objective,
+    remainingCount: Int,
+    isFulfilled: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val remaining = objective.remainingCount
-    val isFulfilled = objective.isFulfilled
-
     Row(
         modifier = modifier
             .background(
@@ -237,13 +118,13 @@ fun ObjectiveIndicator(
                     TileView(tile = Tile.Special(specialType = objective.config.targetSpecial ?: SpecialHeartType.GIFT_HEART))
                 }
                 ObjectiveType.SCORE, ObjectiveType.REACH_SCORE -> {
-                    Text(text = "★", color = Color(0xFFFFD700), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "★", color = GardenPalette.Gold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
                 ObjectiveType.CLEAR_BOARD -> {
-                    Text(text = "♥", color = Color(0xFFFF4081), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "♥", color = GardenPalette.Rose, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
                 ObjectiveType.CLEAR_SPECIFIC_CELLS -> {
-                    Text(text = "⛶", color = Color(0xFF00E5FF), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "⛶", color = GardenPalette.Gold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -255,11 +136,11 @@ fun ObjectiveIndicator(
                 text = "✓",
                 color = Color(0xFF4CAF50),
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Black
+                fontWeight = FontWeight.Bold
             )
         } else {
             Text(
-                text = "$remaining",
+                text = "$remainingCount",
                 color = Color.White,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold

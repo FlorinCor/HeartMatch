@@ -1,0 +1,36 @@
+{
+  "id": 184,
+  "name": "Everheart Citadel: Tidal Crossing",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "W2", "O", "C(BLUE)", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "W2", "O", "C(BLUE)", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "W2", "O", "C(BLUE)", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 22,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [42900, 66900, 96900],
+  "randomSeed": 184,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 3
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "GREEN",
+      "amount": 22
+    }
+  ]
+}

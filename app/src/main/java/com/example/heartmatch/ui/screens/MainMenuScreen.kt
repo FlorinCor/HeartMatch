@@ -1,5 +1,6 @@
 package com.example.heartmatch.ui.screens
 
+import com.example.heartmatch.ui.theme.GardenPalette
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,9 +47,9 @@ fun MainMenuScreen(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF3F145B),
-                        Color(0xFF6A1B9A),
-                        Color(0xFF1A002C)
+                        GardenPalette.Panel,
+                        GardenPalette.PanelLight,
+                        GardenPalette.Background
                     )
                 )
             )
@@ -70,9 +71,9 @@ fun MainMenuScreen(
                 // Coins Badge
                 Row(
                     modifier = Modifier
-                        .shadow(8.dp, RoundedCornerShape(20.dp))
-                        .background(Color(0xFF2E0854), RoundedCornerShape(20.dp))
-                        .border(1.5.dp, Color(0xFFFFD700), RoundedCornerShape(20.dp))
+                        .shadow(6.dp, RoundedCornerShape(20.dp))
+                        .background(GardenPalette.Panel, RoundedCornerShape(20.dp))
+                        .border(1.5.dp, GardenPalette.Gold, RoundedCornerShape(20.dp))
                         .padding(horizontal = 14.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -80,7 +81,7 @@ fun MainMenuScreen(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "${profile.coins}",
-                        color = Color(0xFFFFD700),
+                        color = GardenPalette.Gold,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -89,13 +90,13 @@ fun MainMenuScreen(
                 // Total Stars Badge
                 Row(
                     modifier = Modifier
-                        .shadow(8.dp, RoundedCornerShape(20.dp))
-                        .background(Color(0xFF2E0854), RoundedCornerShape(20.dp))
-                        .border(1.5.dp, Color(0xFFFF4081), RoundedCornerShape(20.dp))
+                        .shadow(6.dp, RoundedCornerShape(20.dp))
+                        .background(GardenPalette.Panel, RoundedCornerShape(20.dp))
+                        .border(1.5.dp, GardenPalette.Rose, RoundedCornerShape(20.dp))
                         .padding(horizontal = 14.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "★", color = Color(0xFFFFD700), fontSize = 18.sp, fontWeight = FontWeight.Black)
+                    Text(text = "★", color = GardenPalette.Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "${profile.totalStarsEarned}",
@@ -110,7 +111,7 @@ fun MainMenuScreen(
                     modifier = Modifier
                         .size(42.dp)
                         .shadow(6.dp, CircleShape)
-                        .background(Color(0xFF4A148C), CircleShape)
+                        .background(GardenPalette.Panel, CircleShape)
                         .border(1.5.dp, Color.White.copy(alpha = 0.7f), CircleShape)
                         .clickable { onSettingsClick() },
                     contentAlignment = Alignment.Center
@@ -138,13 +139,13 @@ fun MainMenuScreen(
                     text = "HEART MATCH",
                     color = Color.White,
                     fontSize = 34.sp,
-                    fontWeight = FontWeight.Black,
+                    fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 )
 
                 Text(
-                    text = "Level ${profile.highestUnlockedLevel} / 100",
-                    color = Color(0xFFFFD54F),
+                    text = "Level ${profile.highestUnlockedLevel} / 200",
+                    color = GardenPalette.Gold,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -162,14 +163,14 @@ fun MainMenuScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
-                        .shadow(16.dp, RoundedCornerShape(26.dp))
+                        .shadow(6.dp, RoundedCornerShape(26.dp))
                         .background(
                             brush = Brush.horizontalGradient(
-                                colors = listOf(Color(0xFFFF4081), Color(0xFFFF8F00))
+                                colors = listOf(GardenPalette.Rose, GardenPalette.RoseDark)
                             ),
                             shape = RoundedCornerShape(26.dp)
                         )
-                        .border(2.5.dp, Color.White, RoundedCornerShape(26.dp))
+                        .border(1.dp, Color.White, RoundedCornerShape(26.dp))
                         .clickable { onPlayClick() }
                         .padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
@@ -178,7 +179,7 @@ fun MainMenuScreen(
                         text = "CONTINUE LEVEL ${profile.highestUnlockedLevel} ▶",
                         color = Color.White,
                         fontSize = 18.sp,
-                        fontWeight = FontWeight.Black
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
@@ -186,20 +187,20 @@ fun MainMenuScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
-                        .shadow(10.dp, RoundedCornerShape(24.dp))
+                        .shadow(6.dp, RoundedCornerShape(24.dp))
                         .background(
                             brush = Brush.horizontalGradient(
-                                colors = listOf(Color(0xFF7B1FA2), Color(0xFF512DA8))
+                                colors = listOf(GardenPalette.PanelLight, GardenPalette.Panel)
                             ),
                             shape = RoundedCornerShape(24.dp)
                         )
-                        .border(2.dp, Color(0xFFFF80AB), RoundedCornerShape(24.dp))
+                        .border(1.dp, GardenPalette.RoseLight, RoundedCornerShape(24.dp))
                         .clickable { onLevelMapClick() }
                         .padding(vertical = 14.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "🗺 LEVEL MAP (1-100)",
+                        text = "🗺 LEVEL MAP (1-200)",
                         color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.ExtraBold
@@ -215,16 +216,16 @@ fun MainMenuScreen(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .shadow(8.dp, RoundedCornerShape(20.dp))
-                            .background(Color(0xFF2E0854), RoundedCornerShape(20.dp))
-                            .border(1.5.dp, Color(0xFFFFD700), RoundedCornerShape(20.dp))
+                            .shadow(6.dp, RoundedCornerShape(20.dp))
+                            .background(GardenPalette.Panel, RoundedCornerShape(20.dp))
+                            .border(1.5.dp, GardenPalette.Gold, RoundedCornerShape(20.dp))
                             .clickable { onDailyRewardClick() }
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "🎁 Daily Gift",
-                            color = Color(0xFFFFD700),
+                            color = GardenPalette.Gold,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -234,16 +235,16 @@ fun MainMenuScreen(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .shadow(8.dp, RoundedCornerShape(20.dp))
-                            .background(Color(0xFF2E0854), RoundedCornerShape(20.dp))
-                            .border(1.5.dp, Color(0xFF00E5FF), RoundedCornerShape(20.dp))
+                            .shadow(6.dp, RoundedCornerShape(20.dp))
+                            .background(GardenPalette.Panel, RoundedCornerShape(20.dp))
+                            .border(1.5.dp, GardenPalette.Gold, RoundedCornerShape(20.dp))
                             .clickable { onTutorialClick() }
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "📖 Tutorial",
-                            color = Color(0xFF00E5FF),
+                            color = GardenPalette.Gold,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )

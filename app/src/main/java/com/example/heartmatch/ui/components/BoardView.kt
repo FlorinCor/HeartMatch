@@ -1,5 +1,12 @@
 package com.example.heartmatch.ui.components
 
+import com.example.heartmatch.ui.theme.GardenPalette
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -14,15 +21,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -31,6 +41,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import androidx.compose.animation.core.VectorConverter
+import com.example.heartmatch.ui.animation.BoardAnimationTimings
+import com.example.heartmatch.ui.animation.BoardDisplayState
 import com.example.heartmatch.engine.model.Board
 import com.example.heartmatch.engine.model.Coord
 import kotlin.math.abs
@@ -39,6 +53,7 @@ import kotlin.math.roundToInt
 @Composable
 fun BoardView(
     board: Board,
+    displayState: BoardDisplayState,
     selectedCoord: Coord?,
     hintedCoords: List<Coord>,
     activeBooster: String?,
@@ -56,6 +71,7 @@ fun BoardView(
     onLaserFinished: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val board = displayState.board ?: board
     val rows = board.rows
     val cols = board.cols
 
@@ -64,22 +80,22 @@ fun BoardView(
             .fillMaxWidth()
             .aspectRatio(cols.toFloat() / rows.toFloat())
             .padding(12.dp)
-            .shadow(18.dp, RoundedCornerShape(20.dp))
+            .shadow(6.dp, RoundedCornerShape(20.dp))
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF3B2652),
-                        Color(0xFF261538)
+                        GardenPalette.Panel,
+                        GardenPalette.Background
                     )
                 ),
                 shape = RoundedCornerShape(20.dp)
             )
             .border(
-                width = 3.dp,
+                width = 1.dp,
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF8B6BAE),
-                        Color(0xFF4A3166)
+                        GardenPalette.Rim,
+                        GardenPalette.PanelLight
                     )
                 ),
                 shape = RoundedCornerShape(20.dp)
@@ -177,8 +193,8 @@ fun BoardView(
                     val cell = board[coord]
                     if (cell != null && cell.isPlayable) {
                         val isEven = (r + c) % 2 == 0
-                        val cellTop = if (isEven) Color(0xFF5C4675) else Color(0xFF55406E)
-                        val cellBottom = if (isEven) Color(0xFF3F2C57) else Color(0xFF3A2852)
+                        val cellTop = if (isEven) GardenPalette.CellLight else GardenPalette.CellLight
+                        val cellBottom = if (isEven) GardenPalette.CellDark else GardenPalette.CellDark
 
                         Box(
                             modifier = Modifier
@@ -195,8 +211,8 @@ fun BoardView(
                                     width = 1.dp,
                                     brush = Brush.verticalGradient(
                                         colors = listOf(
-                                            Color.White.copy(alpha = 0.22f),
-                                            Color.Black.copy(alpha = 0.30f)
+                                            Color.White.copy(alpha = 0.08f),
+                                            Color.Black.copy(alpha = 0.15f)
                                         )
                                     ),
                                     shape = RoundedCornerShape(7.dp)
@@ -206,30 +222,70 @@ fun BoardView(
                 }
             }
 
-            // 2. Active Tiles
-            for (r in 0 until rows) {
-                for (c in 0 until cols) {
-                    val coord = Coord(r, c)
-                    val cell = board[coord]
-                    val tile = cell?.tile
-                    if (cell != null && cell.isPlayable && tile != null) {
-                        val isSelected = selectedCoord == coord
-                        val isHinted = hintedCoords.contains(coord)
+            // Keep tile identity keyed across the whole board so each heart visibly travels
+            // from its old cell to its new one instead of being redrawn in place.
+            val positionedTiles = buildList {
+                board.forEachCell { cell ->
+                    cell.tile?.let { tile -> if (cell.isPlayable) add(cell.coord to tile) }
+                }
+            }
+            for ((coord, tile) in positionedTiles) key(tile.id) {
+                val targetOffset = Offset(coord.col * cellSizePx, coord.row * cellSizePx)
+                val spawnRow = displayState.fallOrigins[tile.id]
+                val animatedOffset = remember(tile.id) {
+                    Animatable(
+                        Offset(targetOffset.x, (spawnRow ?: coord.row) * cellSizePx),
+                        Offset.VectorConverter
+                    )
+                }
+                LaunchedEffect(displayState.version, coord) {
+                    animatedOffset.animateTo(
+                        targetOffset,
+                        spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
+                    )
+                }
 
-                        Box(
-                            modifier = Modifier
-                                .offset { IntOffset((c * cellSizePx).roundToInt(), (r * cellSizePx).roundToInt()) }
-                                .size(cellSizeDp)
-                                .padding(2.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            TileView(
-                                tile = tile,
-                                isSelected = isSelected,
-                                isHinted = isHinted
-                            )
-                        }
-                    }
+                val isVanishing = coord in displayState.vanishingCoords
+                val alpha by animateFloatAsState(
+                    targetValue = if (isVanishing) 0f else 1f,
+                    animationSpec = tween(BoardAnimationTimings.VANISH_MS, easing = FastOutSlowInEasing),
+                    label = "tileFade-${tile.id}"
+                )
+                val vanishScale by animateFloatAsState(
+                    targetValue = if (isVanishing) 0.15f else 1f,
+                    animationSpec = tween(BoardAnimationTimings.VANISH_MS, easing = FastOutSlowInEasing),
+                    label = "tileVanish-${tile.id}"
+                )
+                val isSwapping = coord == displayState.swapFrom || coord == displayState.swapTo
+                val swapScale by animateFloatAsState(
+                    targetValue = if (isSwapping) 1.14f else 1f,
+                    animationSpec = tween(BoardAnimationTimings.SWAP_MS, easing = FastOutSlowInEasing),
+                    label = "tileSwap-${tile.id}"
+                )
+                // Newly appearing hearts should use the same full cell size as every other
+                // heart. Keep the pop-in bookkeeping for transition timing, but don't shrink
+                // the tile when it first appears.
+                val tileScale = vanishScale * swapScale
+
+                Box(
+                    modifier = Modifier
+                        .offset { IntOffset(animatedOffset.value.x.roundToInt(), animatedOffset.value.y.roundToInt()) }
+                        .size(cellSizeDp)
+                        .padding(2.dp)
+                        .zIndex(if (isSwapping) 1f else 0f)
+                        .graphicsLayer {
+                            this.alpha = alpha
+                            scaleX = tileScale
+                            scaleY = tileScale
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    TileView(
+                        tile = tile,
+                        isSelected = selectedCoord == coord,
+                        isHinted = hintedCoords.contains(coord),
+                        isHealed = coord in displayState.healedCoords
+                    )
                 }
             }
 

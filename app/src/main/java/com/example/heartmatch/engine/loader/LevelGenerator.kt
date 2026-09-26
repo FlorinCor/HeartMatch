@@ -7,10 +7,10 @@ import com.example.heartmatch.engine.model.LevelDifficulty
 object LevelGenerator {
 
     /**
-     * Generates the JSON string for level [levelId] (1 to 100).
+     * Generates the JSON string for level [levelId] (1 to 200).
      */
     fun generateLevelJson(levelId: Int): String {
-        require(levelId in 1..100) { "Level id must be between 1 and 100 (got $levelId)" }
+        require(levelId in 1..200) { "Level id must be between 1 and 200 (got $levelId)" }
 
         val spec = getLevelSpec(levelId)
         val sb = StringBuilder()
@@ -59,10 +59,10 @@ object LevelGenerator {
     }
 
     /**
-     * Generates all 100 level JSONs mapped by level ID.
+     * Generates all 200 level JSONs mapped by level ID.
      */
     fun generateAllLevels(): Map<Int, String> {
-        return (1..100).associateWith { generateLevelJson(it) }
+        return (1..200).associateWith { generateLevelJson(it) }
     }
 
     /**
@@ -100,7 +100,104 @@ object LevelGenerator {
             in 41..60 -> createTier4Spec(id)
             in 61..80 -> createTier5Spec(id)
             in 81..100 -> createTier6Spec(id)
+            in 101..200 -> createTier7Spec(id)
             else -> error("Invalid level id $id")
+        }
+    }
+
+    // =========================================================================
+    // TIERS 7-11: LEVELS 101-200 (Advanced remix of every blocker mechanic)
+    // =========================================================================
+    private fun createTier7Spec(id: Int): LevelSpec {
+        val tier = (id - 101) / 20
+        val local = (id - 101) % 20
+        val chapter = listOf(
+            "Crystal Cove", "Thornwood Reach", "Moonlit Reef", "Ember Heartlands", "Everheart Citadel"
+        )[tier]
+        val epithets = listOf(
+            "Shimmering Strand", "Pearl Caverns", "Glass Garden", "Tidal Crossing", "Lighthouse Keep",
+            "Coral Switchback", "Silver Shoals", "The Hidden Grotto", "Prism Passage", "Seahorse Steps",
+            "The Sunken Arcade", "Brightwater Basin", "Seashell Spire", "Dancing Kelp", "The Quiet Lagoon",
+            "Moonstone Shelf", "Starfish Promenade", "The Blue Beyond", "Heartlight Harbor", "The Last Tide"
+        )
+        val colors5 = listOf(HeartColor.RED, HeartColor.PINK, HeartColor.BLUE, HeartColor.GREEN, HeartColor.YELLOW)
+        val colors6 = colors5 + HeartColor.PURPLE
+        val colors = if (tier < 2) colors5 else colors6
+
+        val mechanicSets = listOf(
+            listOf("I(BLUE)", "S2", "BR(PINK)", "W2", "B"),
+            listOf("W2", "B", "S2", "BR(GREEN)", "I(YELLOW)"),
+            listOf("C(RED)", "D", "I(BLUE)", "B", "BR(PINK)"),
+            listOf("D", "C(GREEN)", "W2", "B", "S2", "I(PURPLE)"),
+            listOf("BR(RED)", "C(BLUE)", "D", "W2", "B", "I(YELLOW)", "S2")
+        )[tier]
+        val formations = listOf(
+            listOf(2 to 2, 2 to 5, 3 to 3, 3 to 6, 4 to 2, 4 to 5, 5 to 3, 5 to 6, 6 to 2, 6 to 5, 3 to 1, 5 to 1),
+            listOf(2 to 2, 2 to 6, 3 to 3, 3 to 5, 4 to 2, 4 to 6, 5 to 3, 5 to 5, 6 to 2, 6 to 6, 3 to 1, 5 to 7),
+            listOf(2 to 2, 2 to 6, 3 to 3, 3 to 5, 4 to 2, 4 to 6, 5 to 3, 5 to 5, 6 to 2, 6 to 6, 4 to 4, 3 to 1),
+            listOf(2 to 2, 4 to 2, 6 to 2, 2 to 4, 4 to 4, 6 to 4, 2 to 6, 4 to 6, 6 to 6, 3 to 3, 5 to 5, 3 to 5, 5 to 3),
+            listOf(2 to 3, 3 to 2, 3 to 6, 4 to 4, 5 to 2, 5 to 6, 6 to 3, 2 to 5, 4 to 2, 4 to 6, 6 to 5, 2 to 2)
+        )[local % 5]
+        val grid = Array(9) { Array(9) { "O" } }
+        val primaryType = mechanicSets[local % mechanicSets.size]
+        val secondaryType = mechanicSets[(local + 1 + tier) % mechanicSets.size]
+        val primaryCount = 3 + (local % 3)
+        val secondaryCount = 2 + (local % 2)
+        var nextSlot = 0
+
+        fun place(type: String, count: Int) {
+            repeat(count) {
+                val (row, col) = formations[nextSlot++]
+                grid[row][col] = type
+            }
+        }
+        place(primaryType, primaryCount)
+        place(secondaryType, secondaryCount)
+
+        val objectives = mutableListOf(
+            objectiveFor(primaryType, primaryCount),
+        )
+        when {
+            local % 5 == 4 -> {
+                val giftCount = 2
+                repeat(giftCount) {
+                    val (row, col) = formations[nextSlot++]
+                    grid[row][col] = "GIFT"
+                }
+                objectives += ObjSpec("COLLECT", "GIFT", giftCount)
+            }
+            local % 4 == 3 -> objectives += ObjSpec("COLLECT", colors[local % colors.size].name, 16 + (local % 4) * 2)
+            else -> objectives += objectiveFor(secondaryType, secondaryCount)
+        }
+
+        val baseScore = 28000 + tier * 3500 + local * 300
+        return LevelSpec(
+            id = id,
+            name = "$chapter: ${epithets[local]}",
+            difficulty = LevelDifficulty.EXPERT,
+            rows = 9,
+            cols = 9,
+            grid = grid,
+            moves = 26 - tier,
+            colors = colors,
+            starThresholds = Triple(baseScore, baseScore + 18000 + tier * 1500, baseScore + 42000 + tier * 3000),
+            objectives = objectives
+        )
+    }
+
+    private fun objectiveFor(cellCode: String, count: Int): ObjSpec = when {
+        cellCode.startsWith("BR") -> ObjSpec("REPAIR", null, count)
+        cellCode.startsWith("D") -> ObjSpec("CLEAR_DARK", null, count)
+        else -> {
+            val type = when {
+                cellCode.startsWith("S") -> "STONE"
+                cellCode.startsWith("I") -> "ICE"
+                cellCode.startsWith("W") -> "WOODEN"
+                cellCode.startsWith("B") -> "BARBED"
+                cellCode.startsWith("C") -> "CHAINED"
+                else -> error("Unsupported generated blocker $cellCode")
+            }
+            ObjSpec("DESTROY", type, count)
         }
     }
 

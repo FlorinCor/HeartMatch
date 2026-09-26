@@ -1,0 +1,36 @@
+{
+  "id": 101,
+  "name": "Crystal Cove: Shimmering Strand",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "I(BLUE)", "O", "O", "I(BLUE)", "O", "O", "O"],
+      ["O", "O", "O", "I(BLUE)", "O", "O", "S2", "O", "O"],
+      ["O", "O", "S2", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 26,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [28000, 46000, 70000],
+  "randomSeed": 101,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 3
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 2
+    }
+  ]
+}

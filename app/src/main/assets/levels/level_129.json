@@ -1,0 +1,35 @@
+{
+  "id": 129,
+  "name": "Thornwood Reach: Prism Passage",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "BR(GREEN)", "O", "BR(GREEN)", "O", "W2", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "BR(GREEN)", "O", "BR(GREEN)", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "BR(GREEN)", "O", "W2", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 25,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [33900, 53400, 78900],
+  "randomSeed": 129,
+  "objectives": [
+    {
+      "type": "REPAIR",
+      "amount": 5
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 2
+    }
+  ]
+}

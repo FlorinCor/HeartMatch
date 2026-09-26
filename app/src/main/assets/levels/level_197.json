@@ -1,0 +1,34 @@
+{
+  "id": 197,
+  "name": "Everheart Citadel: Starfish Promenade",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "D", "O", "O", "O", "D", "O", "O"],
+      ["O", "O", "O", "D", "O", "D", "O", "O", "O"],
+      ["O", "O", "BR(RED)", "O", "O", "O", "BR(RED)", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 22,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [46800, 70800, 100800],
+  "randomSeed": 197,
+  "objectives": [
+    {
+      "type": "CLEAR_DARK",
+      "amount": 4
+    },
+    {
+      "type": "REPAIR",
+      "amount": 2
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package com.example.heartmatch.ui.screens
 
+import com.example.heartmatch.ui.theme.GardenPalette
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -55,9 +56,9 @@ fun SplashScreen(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF4A148C),
-                        Color(0xFF880E4F),
-                        Color(0xFF1A002C)
+                        GardenPalette.Panel,
+                        GardenPalette.PanelLight,
+                        GardenPalette.Background
                     )
                 )
             ),
@@ -85,13 +86,13 @@ fun SplashScreen(
                 text = "HEART MATCH",
                 color = Color.White,
                 fontSize = 38.sp,
-                fontWeight = FontWeight.Black,
+                fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp
             )
 
             Text(
                 text = "A Romantic Match-3 Adventure",
-                color = Color(0xFFFF80AB),
+                color = GardenPalette.RoseLight,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -101,14 +102,14 @@ fun SplashScreen(
             // Play / Start Button
             Box(
                 modifier = Modifier
-                    .shadow(16.dp, RoundedCornerShape(28.dp))
+                    .shadow(6.dp, RoundedCornerShape(28.dp))
                     .background(
                         brush = Brush.horizontalGradient(
-                            colors = listOf(Color(0xFFFF4081), Color(0xFFFFD700))
+                            colors = listOf(GardenPalette.Rose, GardenPalette.Gold)
                         ),
                         shape = RoundedCornerShape(28.dp)
                     )
-                    .border(2.5.dp, Color.White, RoundedCornerShape(28.dp))
+                    .border(1.dp, Color.White, RoundedCornerShape(28.dp))
                     .clickable { onStartClick() }
                     .padding(horizontal = 48.dp, vertical = 16.dp),
                 contentAlignment = Alignment.Center
@@ -117,7 +118,7 @@ fun SplashScreen(
                     text = "PLAY NOW ♥",
                     color = Color.White,
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Black
+                    fontWeight = FontWeight.Bold
                 )
             }
         }

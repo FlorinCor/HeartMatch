@@ -1,0 +1,36 @@
+{
+  "id": 148,
+  "name": "Moonlit Reef: The Hidden Grotto",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "I(BLUE)", "O", "O", "O", "I(BLUE)", "O", "O"],
+      ["O", "O", "O", "I(BLUE)", "O", "I(BLUE)", "O", "O", "O"],
+      ["O", "O", "C(RED)", "O", "O", "O", "C(RED)", "O", "O"],
+      ["O", "O", "O", "C(RED)", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [37100, 58100, 85100],
+  "randomSeed": 148,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 4
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "PINK",
+      "amount": 22
+    }
+  ]
+}

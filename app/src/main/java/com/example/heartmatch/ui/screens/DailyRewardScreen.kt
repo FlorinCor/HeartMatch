@@ -1,5 +1,6 @@
 package com.example.heartmatch.ui.screens
 
+import com.example.heartmatch.ui.theme.GardenPalette
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +18,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import com.example.heartmatch.ui.components.GardenBackdrop
+import com.example.heartmatch.ui.components.GardenIcon
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +58,8 @@ fun DailyRewardScreen(
 ) {
     val currentDay = System.currentTimeMillis() / (1000 * 60 * 60 * 24)
     val hasClaimedToday = profile.lastDailyClaimDay == currentDay
-    val nextDayToClaim = if (hasClaimedToday) profile.dailyRewardStreak else (profile.dailyRewardStreak % 7) + 1
+    val streak = profile.dailyRewardStreak
+    val nextDayToClaim = if (hasClaimedToday) streak else (streak % 7) + 1
 
     Box(
         modifier = Modifier
@@ -61,16 +67,17 @@ fun DailyRewardScreen(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF3F145B),
-                        Color(0xFF6A1B9A),
-                        Color(0xFF1A002C)
+                        GardenPalette.Panel,
+                        GardenPalette.PanelLight,
+                        GardenPalette.Background
                     )
                 )
             )
             .padding(16.dp)
     ) {
+        GardenBackdrop(dim = 0.72f)
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -86,19 +93,19 @@ fun DailyRewardScreen(
                     modifier = Modifier
                         .size(42.dp)
                         .shadow(6.dp, CircleShape)
-                        .background(Color(0xFF2E0854), CircleShape)
+                        .background(GardenPalette.Panel, CircleShape)
                         .border(1.5.dp, Color.White.copy(alpha = 0.8f), CircleShape)
                         .clickable { onBackClick() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "◀", color = Color.White, fontSize = 18.sp)
+                    GardenIcon("back")
                 }
 
                 Text(
                     text = "DAILY REWARD",
                     color = Color.White,
                     fontSize = 24.sp,
-                    fontWeight = FontWeight.Black,
+                    fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 )
 
@@ -108,13 +115,13 @@ fun DailyRewardScreen(
             // Streak Info Banner
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "🎁 7-Day Login Bonus",
-                    color = Color(0xFFFFD54F),
+                    text = "7 garden gifts",
+                    color = GardenPalette.Gold,
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Black
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = if (hasClaimedToday) "You've claimed today's reward! Come back tomorrow." else "Claim your daily rewards to boost your game!",
+                    text = if (hasClaimedToday) "You've claimed today's reward! Come back tomorrow." else "Your progress waits for you. Missing a day never resets it.",
                     color = Color.White.copy(alpha = 0.85f),
                     fontSize = 13.sp
                 )
@@ -133,7 +140,7 @@ fun DailyRewardScreen(
                     for (i in 0..2) {
                         DailyCard(
                             item = dailyRewardsList[i],
-                            streak = profile.dailyRewardStreak,
+                            streak = streak,
                             hasClaimedToday = hasClaimedToday,
                             modifier = Modifier.weight(1f)
                         )
@@ -148,7 +155,7 @@ fun DailyRewardScreen(
                     for (i in 3..5) {
                         DailyCard(
                             item = dailyRewardsList[i],
-                            streak = profile.dailyRewardStreak,
+                            streak = streak,
                             hasClaimedToday = hasClaimedToday,
                             modifier = Modifier.weight(1f)
                         )
@@ -157,7 +164,7 @@ fun DailyRewardScreen(
 
                 // Day 7 Big Jackpot Card
                 val day7 = dailyRewardsList[6]
-                val isClaimed = profile.dailyRewardStreak >= 7
+                val isClaimed = streak >= 7
                 val isCurrentClaimable = !hasClaimedToday && nextDayToClaim == 7
 
                 Box(
@@ -165,13 +172,13 @@ fun DailyRewardScreen(
                         .fillMaxWidth()
                         .shadow(if (isCurrentClaimable) 14.dp else 6.dp, RoundedCornerShape(20.dp))
                         .background(
-                            brush = if (isCurrentClaimable) Brush.horizontalGradient(listOf(Color(0xFFFF4081), Color(0xFFFFD700)))
-                            else Brush.verticalGradient(listOf(Color(0xFF2E0854), Color(0xFF1E0A30))),
+                            brush = if (isCurrentClaimable) Brush.horizontalGradient(listOf(GardenPalette.Rose, GardenPalette.Gold))
+                            else Brush.verticalGradient(listOf(GardenPalette.Panel, GardenPalette.Background)),
                             shape = RoundedCornerShape(20.dp)
                         )
                         .border(
                             width = if (isCurrentClaimable) 2.5.dp else 1.dp,
-                            color = if (isCurrentClaimable) Color.White else Color(0xFFFFD700).copy(alpha = 0.5f),
+                            color = if (isCurrentClaimable) Color.White else GardenPalette.Gold.copy(alpha = 0.5f),
                             shape = RoundedCornerShape(20.dp)
                         )
                         .padding(14.dp)
@@ -182,10 +189,10 @@ fun DailyRewardScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text(text = "DAY 7 GRAND PRIZE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
-                            Text(text = "+${day7.coins} Coins & Bonus Booster Pack!", color = Color(0xFFFFD700), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "DAY 7 GRAND PRIZE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "+${day7.coins} Coins & one of each booster!", color = GardenPalette.Gold, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
-                        Text(text = if (isClaimed) "✓" else "🎁", fontSize = 28.sp)
+                        if (isClaimed) Text("✓", color = GardenPalette.Gold, fontSize = 28.sp) else GardenIcon("gift")
                     }
                 }
             }
@@ -195,13 +202,13 @@ fun DailyRewardScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
-                    .shadow(16.dp, RoundedCornerShape(26.dp))
+                    .shadow(6.dp, RoundedCornerShape(26.dp))
                     .background(
-                        brush = if (!hasClaimedToday && currentClaimItem != null) Brush.horizontalGradient(listOf(Color(0xFFFF4081), Color(0xFFFF8F00)))
-                        else Brush.horizontalGradient(listOf(Color(0xFF616161), Color(0xFF424242))),
+                        brush = if (!hasClaimedToday && currentClaimItem != null) Brush.horizontalGradient(listOf(GardenPalette.Rose, GardenPalette.RoseDark))
+                        else Brush.horizontalGradient(listOf(Color(0xFF616161), GardenPalette.PanelLight)),
                         shape = RoundedCornerShape(26.dp)
                     )
-                    .border(2.dp, Color.White, RoundedCornerShape(26.dp))
+                    .border(1.dp, Color.White, RoundedCornerShape(26.dp))
                     .clickable(enabled = !hasClaimedToday && currentClaimItem != null) {
                         if (currentClaimItem != null) {
                             onClaimReward(nextDayToClaim, currentClaimItem.coins, currentClaimItem.boosterType)
@@ -214,7 +221,7 @@ fun DailyRewardScreen(
                     text = if (hasClaimedToday) "CLAIMED FOR TODAY ✓" else "CLAIM DAY $nextDayToClaim REWARD 🎁",
                     color = Color.White,
                     fontSize = 17.sp,
-                    fontWeight = FontWeight.Black
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -236,9 +243,9 @@ fun DailyCard(
             .shadow(if (isClaimable) 10.dp else 4.dp, RoundedCornerShape(18.dp))
             .background(
                 brush = when {
-                    isClaimable -> Brush.verticalGradient(listOf(Color(0xFFFF4081), Color(0xFFFF8F00)))
+                    isClaimable -> Brush.verticalGradient(listOf(GardenPalette.Rose, GardenPalette.RoseDark))
                     isClaimed -> Brush.verticalGradient(listOf(Color(0xFF1B5E20), Color(0xFF2E7D32)))
-                    else -> Brush.verticalGradient(listOf(Color(0xFF2E0854), Color(0xFF1E0A30)))
+                    else -> Brush.verticalGradient(listOf(GardenPalette.Panel, GardenPalette.Background))
                 },
                 shape = RoundedCornerShape(18.dp)
             )
@@ -257,12 +264,12 @@ fun DailyCard(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "Day ${item.day}",
-                color = if (isClaimable) Color.White else Color(0xFFFFD54F),
+                color = if (isClaimable) Color.White else GardenPalette.Gold,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = item.icon, fontSize = 24.sp)
+            if (item.icon == "+5") Text("+5", color = GardenPalette.Ivory, fontSize = 24.sp) else GardenIcon(when(item.icon) { "💰" -> "coin"; "🎁" -> "gift"; else -> item.icon })
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = if (isClaimed) "Claimed ✓" else "+${item.coins}",

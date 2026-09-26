@@ -8,7 +8,12 @@ enum class MapAreaId(val title: String, val startLevel: Int, val endLevel: Int) 
     STONE_VALLEY("Stone Valley", 21, 40),
     BROKEN_FOREST("Broken Hearts Forest", 41, 60),
     SHADOW_GARDEN("Shadow Garden", 61, 80),
-    HEART_KINGDOM("Heart Kingdom", 81, 100);
+    HEART_KINGDOM("Heart Kingdom", 81, 100),
+    CRYSTAL_COVE("Crystal Cove", 101, 120),
+    THORNWOOD_REACH("Thornwood Reach", 121, 140),
+    MOONLIT_REEF("Moonlit Reef", 141, 160),
+    EMBER_HEARTLANDS("Ember Heartlands", 161, 180),
+    EVERHEART_CITADEL("Everheart Citadel", 181, 200);
 
     companion object {
         fun fromLevel(level: Int): MapAreaId {
@@ -18,6 +23,11 @@ enum class MapAreaId(val title: String, val startLevel: Int, val endLevel: Int) 
                 level in 41..60 -> BROKEN_FOREST
                 level in 61..80 -> SHADOW_GARDEN
                 level in 81..100 -> HEART_KINGDOM
+                level in 101..120 -> CRYSTAL_COVE
+                level in 121..140 -> THORNWOOD_REACH
+                level in 141..160 -> MOONLIT_REEF
+                level in 161..180 -> EMBER_HEARTLANDS
+                level in 181..200 -> EVERHEART_CITADEL
                 else -> HEART_MEADOW
             }
         }
@@ -139,6 +149,59 @@ data class MapAreaTheme(
             bannerGradientColors = listOf(Color(0xFF4A148C), Color(0xFFFF8F00))
         )
 
+        private fun chapterTheme(
+            id: MapAreaId,
+            subtitle: String,
+            emoji: String,
+            night: Color,
+            deep: Color,
+            mid: Color,
+            light: Color,
+            accent: Color,
+            secondary: Color,
+            node: Color,
+            completed: Color
+        ) = MapAreaTheme(
+            id = id,
+            name = id.title,
+            subtitle = subtitle,
+            levelRangeText = "Levels ${id.startLevel} - ${id.endLevel}",
+            iconEmoji = emoji,
+            backgroundColors = listOf(night, deep, mid, light),
+            primaryAccent = accent,
+            secondaryAccent = secondary,
+            nodeGradientColors = listOf(node, deep),
+            completedNodeGradientColors = listOf(completed, node),
+            pathColor = accent.copy(alpha = 0.8f),
+            bannerGradientColors = listOf(deep, node)
+        )
+
+        val CRYSTAL_COVE = chapterTheme(
+            MapAreaId.CRYSTAL_COVE, "Sea glass cliffs glitter above a calm turquoise bay", "🪸",
+            Color(0xFF061B2B), Color(0xFF0C3D59), Color(0xFF087E8B), Color(0xFF36B7B2),
+            Color(0xFF83F0E2), Color(0xFFFFA7C4), Color(0xFF00ACC1), Color(0xFF4DD0E1)
+        )
+        val THORNWOOD_REACH = chapterTheme(
+            MapAreaId.THORNWOOD_REACH, "Wild rose thickets wind through an ancient greenwood", "🌿",
+            Color(0xFF102319), Color(0xFF1B472B), Color(0xFF356B38), Color(0xFF5E8D45),
+            Color(0xFFA5D66D), Color(0xFFFF9BAA), Color(0xFF689F38), Color(0xFFAED581)
+        )
+        val MOONLIT_REEF = chapterTheme(
+            MapAreaId.MOONLIT_REEF, "Silver moonlight shimmers across a hidden reef", "🌙",
+            Color(0xFF10162D), Color(0xFF242B58), Color(0xFF49417E), Color(0xFF7263A2),
+            Color(0xFFC4B8FF), Color(0xFF75E5F0), Color(0xFF5C6BC0), Color(0xFF9FA8DA)
+        )
+        val EMBER_HEARTLANDS = chapterTheme(
+            MapAreaId.EMBER_HEARTLANDS, "Warm volcanic gardens glow with living embers", "🔥",
+            Color(0xFF2C1115), Color(0xFF64251C), Color(0xFF9C3D20), Color(0xFFC45C28),
+            Color(0xFFFFC46B), Color(0xFFFF8A80), Color(0xFFE64A19), Color(0xFFFF8A65)
+        )
+        val EVERHEART_CITADEL = chapterTheme(
+            MapAreaId.EVERHEART_CITADEL, "A rose-gold citadel crowns the farthest reaches", "🏰",
+            Color(0xFF281326), Color(0xFF54203D), Color(0xFF873957), Color(0xFFB45A62),
+            Color(0xFFFFD18B), Color(0xFFFFA6B7), Color(0xFFAD4057), Color(0xFFEF798D)
+        )
+
         fun getThemeForLevel(level: Int): MapAreaTheme {
             return when (MapAreaId.fromLevel(level)) {
                 MapAreaId.HEART_MEADOW -> HEART_MEADOW
@@ -146,6 +209,11 @@ data class MapAreaTheme(
                 MapAreaId.BROKEN_FOREST -> BROKEN_FOREST
                 MapAreaId.SHADOW_GARDEN -> SHADOW_GARDEN
                 MapAreaId.HEART_KINGDOM -> HEART_KINGDOM
+                MapAreaId.CRYSTAL_COVE -> CRYSTAL_COVE
+                MapAreaId.THORNWOOD_REACH -> THORNWOOD_REACH
+                MapAreaId.MOONLIT_REEF -> MOONLIT_REEF
+                MapAreaId.EMBER_HEARTLANDS -> EMBER_HEARTLANDS
+                MapAreaId.EVERHEART_CITADEL -> EVERHEART_CITADEL
             }
         }
 
@@ -156,6 +224,11 @@ data class MapAreaTheme(
                 MapAreaId.BROKEN_FOREST -> BROKEN_FOREST
                 MapAreaId.SHADOW_GARDEN -> SHADOW_GARDEN
                 MapAreaId.HEART_KINGDOM -> HEART_KINGDOM
+                MapAreaId.CRYSTAL_COVE -> CRYSTAL_COVE
+                MapAreaId.THORNWOOD_REACH -> THORNWOOD_REACH
+                MapAreaId.MOONLIT_REEF -> MOONLIT_REEF
+                MapAreaId.EMBER_HEARTLANDS -> EMBER_HEARTLANDS
+                MapAreaId.EVERHEART_CITADEL -> EVERHEART_CITADEL
             }
         }
     }

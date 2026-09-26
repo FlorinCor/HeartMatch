@@ -18,125 +18,52 @@ class BlockerHandler {
     fun applyBlockerDamage(
         board: Board,
         matchedCoords: Set<Coord>,
-        directHitCoords: Set<Coord>
+        directHitCoords: Set<Coord>,
+        extraLayerHits: Set<Coord> = emptySet(),
+        includeAdjacentDamage: Boolean = true
     ): BlockerResolutionResult {
-        val allImpactCoords = matchedCoords + directHitCoords
-        val damagedList = mutableListOf<Pair<Coord, Tile.Blocker>>()
-        val destroyedList = mutableListOf<Pair<Coord, Tile.Blocker>>()
+        val impact = matchedCoords + directHitCoords
+        val candidates = impact.toMutableSet()
+        if (includeAdjacentDamage) impact.forEach { candidates += it.orthogonalNeighbors().filter(board::isValid) }
+        val original = candidates.mapNotNull { c -> (board.getTile(c) as? Tile.Blocker)?.let { c to it } }.toMap()
+        val damaged = mutableListOf<Pair<Coord, Tile.Blocker>>()
+        val destroyed = mutableListOf<Pair<Coord, Tile.Blocker>>()
         val events = mutableListOf<EngineEvent>()
-        val processedCoords = mutableSetOf<Coord>()
-
-        // 1. Direct hits on blockers (e.g. hit by special blast or direct match)
-        for (coord in allImpactCoords) {
-            val tile = board.getTile(coord)
-            if (tile is Tile.Blocker && coord !in processedCoords) {
-                processedCoords.add(coord)
-                val newDurability = tile.durability - 1
-                val isDestroyed = newDurability <= 0
-
-                events.add(
-                    EngineEvent.BlockerDamaged(
-                        coord = coord,
-                        blockerType = tile.blockerType,
-                        remainingDurability = maxOf(0, newDurability),
-                        isDestroyed = isDestroyed
-                    )
-                )
-
-                if (isDestroyed) {
-                    destroyedList.add(coord to tile)
-                    events.add(EngineEvent.BlockerDestroyed(coord, tile.blockerType))
-
-                    // Replace with payload or repaired normal heart or clear
-                    when (tile.blockerType) {
-                        BlockerType.CHAINED_HEART -> {
-                            val replacement = tile.payloadTile ?: tile.color?.let { Tile.Normal(color = it) } ?: Tile.Normal(color = HeartColor.RED)
-                            board.setTile(coord, replacement)
-                        }
-                        BlockerType.ICE_HEART -> {
-                            val replacement = tile.payloadTile ?: tile.color?.let { Tile.Normal(color = it) }
-                            board.setTile(coord, replacement)
-                        }
-                        BlockerType.BROKEN_HEART,
-                        BlockerType.STITCHED_HEART -> {
-                            val replacement = tile.payloadTile ?: Tile.Normal(color = tile.color ?: HeartColor.RED)
-                            board.setTile(coord, replacement)
-                        }
-                        else -> {
-                            board.setTile(coord, null)
-                        }
-                    }
-                } else {
-                    val updatedBlocker = tile.copy(
-                        durability = newDurability,
-                        turnsSurvived = if (tile.blockerType == BlockerType.DARK_HEART) 0 else tile.turnsSurvived
-                    )
-                    board.setTile(coord, updatedBlocker)
-                    damagedList.add(coord to updatedBlocker)
+        val healedNeighbors = mutableSetOf<Coord>()
+        fun hit(coord: Coord, tile: Tile.Blocker, amount: Int) {
+            val remaining = (tile.durability - amount).coerceAtLeast(0)
+            events += EngineEvent.BlockerDamaged(coord, tile.blockerType, remaining, remaining == 0)
+            if (remaining == 0) {
+                destroyed += coord to tile
+                events += EngineEvent.BlockerDestroyed(coord, tile.blockerType)
+                val replacement = when (tile.blockerType) {
+                    BlockerType.CHAINED_HEART -> tile.payloadTile ?: Tile.Normal(color = tile.color ?: HeartColor.RED)
+                    BlockerType.ICE_HEART -> tile.payloadTile ?: tile.color?.let { Tile.Normal(color = it) }
+                    BlockerType.BROKEN_HEART, BlockerType.STITCHED_HEART -> tile.payloadTile ?: Tile.Normal(color = tile.color ?: HeartColor.RED)
+                    else -> null
                 }
+                board.setTile(coord, replacement)
+                if (tile.blockerType == BlockerType.STITCHED_HEART) healedNeighbors += coord.orthogonalNeighbors().filter(board::isValid)
+            } else {
+                val updated = tile.copy(durability = remaining, turnsSurvived = if (tile.blockerType == BlockerType.DARK_HEART) 0 else tile.turnsSurvived)
+                board.setTile(coord, updated)
+                damaged += coord to updated
             }
         }
-
-        // 2. Adjacent damage from matches / direct hits
-        val adjacentCandidates = mutableSetOf<Coord>()
-        for (coord in allImpactCoords) {
-            for (neighbor in coord.orthogonalNeighbors()) {
-                if (board.isValid(neighbor) && neighbor !in processedCoords && neighbor !in allImpactCoords) {
-                    adjacentCandidates.add(neighbor)
-                }
-            }
+        original.forEach { (coord, tile) ->
+            // Stone takes one hit per wave. Wood can shed two layers when surrounded by a match.
+            val woodBonus = tile.blockerType == BlockerType.WOODEN_HEART && coord.orthogonalNeighbors().count { it in matchedCoords } >= 2
+            val strength = 1 + (if (coord in extraLayerHits || woodBonus) 1 else 0)
+            hit(coord, tile, strength)
         }
-
-        for (coord in adjacentCandidates) {
-            val tile = board.getTile(coord)
-            if (tile is Tile.Blocker && coord !in processedCoords) {
-                processedCoords.add(coord)
-                val newDurability = tile.durability - 1
-                val isDestroyed = newDurability <= 0
-
-                events.add(
-                    EngineEvent.BlockerDamaged(
-                        coord = coord,
-                        blockerType = tile.blockerType,
-                        remainingDurability = maxOf(0, newDurability),
-                        isDestroyed = isDestroyed
-                    )
-                )
-
-                if (isDestroyed) {
-                    destroyedList.add(coord to tile)
-                    events.add(EngineEvent.BlockerDestroyed(coord, tile.blockerType))
-
-                    when (tile.blockerType) {
-                        BlockerType.CHAINED_HEART -> {
-                            val replacement = tile.payloadTile ?: tile.color?.let { Tile.Normal(color = it) } ?: Tile.Normal(color = HeartColor.RED)
-                            board.setTile(coord, replacement)
-                        }
-                        BlockerType.ICE_HEART -> {
-                            val replacement = tile.payloadTile ?: tile.color?.let { Tile.Normal(color = it) }
-                            board.setTile(coord, replacement)
-                        }
-                        BlockerType.BROKEN_HEART,
-                        BlockerType.STITCHED_HEART -> {
-                            val replacement = tile.payloadTile ?: Tile.Normal(color = tile.color ?: HeartColor.RED)
-                            board.setTile(coord, replacement)
-                        }
-                        else -> {
-                            board.setTile(coord, null)
-                        }
-                    }
-                } else {
-                    val updatedBlocker = tile.copy(
-                        durability = newDurability,
-                        turnsSurvived = if (tile.blockerType == BlockerType.DARK_HEART) 0 else tile.turnsSurvived
-                    )
-                    board.setTile(coord, updatedBlocker)
-                    damagedList.add(coord to updatedBlocker)
-                }
-            }
+        val processedHealing = mutableSetOf<Coord>()
+        while (true) {
+            val coord = healedNeighbors.firstOrNull { it !in processedHealing } ?: break
+            processedHealing += coord
+            val tile = board.getTile(coord) as? Tile.Blocker ?: continue
+            if (tile.blockerType in listOf(BlockerType.BROKEN_HEART, BlockerType.STITCHED_HEART)) hit(coord, tile, 1)
         }
-
-        return BlockerResolutionResult(damagedList, destroyedList, events)
+        return BlockerResolutionResult(damaged, destroyed, events)
     }
 
     fun processDarkHeartSpread(
@@ -176,17 +103,11 @@ class BlockerHandler {
                         }
                     }
                 }
-            } else {
-                board.setTile(coord, dh.copy(turnsSurvived = newTurns))
             }
+            board.setTile(coord, dh.copy(turnsSurvived = newTurns))
         }
 
         if (readyToSpreadCandidates.isEmpty()) {
-            // If none could spread, still ensure turns are incremented up to threshold
-            for ((coord, dh) in darkHearts) {
-                val newTurns = dh.turnsSurvived + 1
-                board.setTile(coord, dh.copy(turnsSurvived = newTurns))
-            }
             return null
         }
 

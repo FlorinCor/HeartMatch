@@ -1,0 +1,36 @@
+{
+  "id": 121,
+  "name": "Thornwood Reach: Shimmering Strand",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "W2", "O", "O", "W2", "O", "O", "O"],
+      ["O", "O", "O", "W2", "O", "O", "S2", "O", "O"],
+      ["O", "O", "S2", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 25,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [31500, 51000, 76500],
+  "randomSeed": 121,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 3
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 2
+    }
+  ]
+}

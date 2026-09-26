@@ -13,13 +13,13 @@ import kotlin.math.max
  * and the board UI (which animates the tiles between two published states).
  */
 object BoardAnimationTimings {
-    const val SWAP_MS = 320
-    const val VANISH_MS = 360
-    const val SETTLE_MS = 80
-    const val DROP_BASE_MS = 200
-    const val DROP_PER_ROW_MS = 60
-    const val LANDING_MS = 220
-    const val POP_IN_MS = 260
+    const val SWAP_MS = 420
+    const val VANISH_MS = 460
+    const val SETTLE_MS = 90
+    const val DROP_BASE_MS = 300
+    const val DROP_PER_ROW_MS = 75
+    const val LANDING_MS = 240
+    const val POP_IN_MS = 300
 
     fun dropDurationMs(rows: Int): Int = DROP_BASE_MS + DROP_PER_ROW_MS * rows.coerceAtLeast(1)
 }
@@ -39,7 +39,9 @@ data class BoardDisplayState(
     /** Tile id -> (virtual, possibly negative) row the freshly spawned tile starts falling from. */
     val fallOrigins: Map<String, Int> = emptyMap(),
     /** Tile ids that appear in place with a pop-in (created specials, revealed payloads, mid-column spawns). */
-    val popInIds: Set<String> = emptySet()
+    val popInIds: Set<String> = emptySet(),
+    /** Repaired hearts stay in their cell and briefly show a healing highlight. */
+    val healedCoords: Set<Coord> = emptySet()
 )
 
 /** One paced step of a turn replay. */
@@ -71,10 +73,15 @@ sealed interface TurnStep {
     /** Cleared cells are now empty; created specials / revealed payloads pop in. */
     data class Settle(
         override val board: Board,
-        val popInIds: Set<String>
+        val popInIds: Set<String>,
+        val healedCoords: Set<Coord> = emptySet()
     ) : TurnStep {
         override val events: List<EngineEvent> = emptyList()
-        override val durationMs: Long = BoardAnimationTimings.SETTLE_MS.toLong()
+        override val durationMs: Long = if (healedCoords.isEmpty()) {
+            BoardAnimationTimings.SETTLE_MS.toLong()
+        } else {
+            620L
+        }
     }
 
     /** Gravity: existing tiles fall down, new tiles fall in from above the board. */
@@ -163,6 +170,9 @@ class TurnChoreographer {
     }
 
     private fun EngineEvent.isClearPhaseEvent(): Boolean = when (this) {
+        is EngineEvent.TilesCleared,
+        is EngineEvent.ScoreStep,
+        is EngineEvent.LightHeartActivated,
         is EngineEvent.Match,
         is EngineEvent.SpecialCreated,
         is EngineEvent.SpecialTriggered,
@@ -186,6 +196,7 @@ class TurnChoreographer {
         val hitCoords = mutableSetOf<Coord>()
         for (event in phase) {
             when (event) {
+                is EngineEvent.TilesCleared -> hitCoords += event.coords
                 is EngineEvent.Match -> hitCoords += event.coords
                 is EngineEvent.SpecialTriggered -> {
                     hitCoords += event.coord
@@ -196,17 +207,30 @@ class TurnChoreographer {
             }
         }
 
-        // Blockers that only lost durability stay on the board; everything else that was hit vanishes.
-        val vanishing = hitCoords.filter { coord ->
-            val tile = display.getTile(coord)
-            tile != null && (tile !is Tile.Blocker || coord in destroyedCoords)
+        val destroyedBlockers = destroyedCoords.associateWith { display.getTile(it) as? Tile.Blocker }
+        val releasedPayloadHearts = destroyedBlockers.mapNotNull { (coord, blocker) ->
+            if (blocker != null && blocker.blockerType in setOf(BlockerType.ICE_HEART, BlockerType.CHAINED_HEART)) {
+                defaultBlockerReplacement(blocker)?.let { coord to it }
+            } else {
+                null
+            }
+        }.toMap()
+        val healingCoords = destroyedBlockers.mapNotNull { (coord, blocker) ->
+            if (blocker?.blockerType in setOf(BlockerType.BROKEN_HEART, BlockerType.STITCHED_HEART)) coord else null
         }.toSet()
 
-        val destroyedBlockers = destroyedCoords.associateWith { display.getTile(it) as? Tile.Blocker }
+        // Keep released hearts in place while their enclosing ice or bubble breaks away.
+        val vanishing = hitCoords.filter { coord ->
+            val tile = display.getTile(coord)
+            tile != null && (tile !is Tile.Blocker || coord in destroyedCoords) &&
+                coord !in releasedPayloadHearts && coord !in healingCoords
+        }.toSet()
+        releasedPayloadHearts.forEach { (coord, heart) -> display.setTile(coord, heart) }
 
         steps += TurnStep.Clear(display.clone(), vanishing, phase)
 
         val popIn = mutableSetOf<String>()
+        val healed = mutableSetOf<Coord>()
         for (coord in vanishing) {
             display.setTile(coord, null)
         }
@@ -218,11 +242,32 @@ class TurnChoreographer {
         }
         for (coord in destroyedCoords) {
             val blocker = destroyedBlockers[coord]
-            val replacement = resolveTile(coord, upcomingDrops, finalBoard) { it !is Tile.Blocker }
-                ?: blocker?.let { defaultBlockerReplacement(it) }
+            // Only blockers that actually release a payload should show a tile here.
+            // Looking at the final board for every destroyed blocker can pull in a heart
+            // that falls into this cell later, making it flash before the gravity step.
+            val replacement = if (blocker != null && blocker.blockerType in setOf(BlockerType.ICE_HEART, BlockerType.CHAINED_HEART)) {
+                releasedPayloadHearts[coord]
+            } else {
+                blocker
+                    ?.takeIf {
+                        it.blockerType in setOf(
+                            BlockerType.BROKEN_HEART,
+                            BlockerType.STITCHED_HEART
+                        )
+                    }
+                    ?.let { released ->
+                        resolveTile(coord, upcomingDrops, finalBoard) { it !is Tile.Blocker }
+                            ?: defaultBlockerReplacement(released)
+                    }
+            }
             if (replacement != null) {
                 display.setTile(coord, replacement)
-                popIn += replacement.id
+                if (coord in healingCoords) {
+                    healed += coord
+                } else if (blocker?.blockerType !in setOf(BlockerType.CHAINED_HEART, BlockerType.ICE_HEART)) {
+                    // Other blocker transformations still use their normal pop-in.
+                    popIn += replacement.id
+                }
             }
         }
         for (event in created) {
@@ -234,8 +279,8 @@ class TurnChoreographer {
             popIn += tile.id
         }
 
-        if (vanishing.isNotEmpty() || popIn.isNotEmpty()) {
-            steps += TurnStep.Settle(display.clone(), popIn)
+        if (vanishing.isNotEmpty() || popIn.isNotEmpty() || healed.isNotEmpty()) {
+            steps += TurnStep.Settle(display.clone(), popIn, healed)
         }
     }
 

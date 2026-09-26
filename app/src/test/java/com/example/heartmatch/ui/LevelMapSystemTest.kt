@@ -14,7 +14,7 @@ import org.junit.Test
 class LevelMapSystemTest {
 
     @Test
-    fun testAllFiveThemedAreasMapping() {
+    fun testAllTenThemedAreasMapping() {
         // Area 1: Heart Meadow (1-20)
         for (lvl in 1..20) {
             assertEquals(MapAreaId.HEART_MEADOW, MapAreaId.fromLevel(lvl))
@@ -59,12 +59,29 @@ class LevelMapSystemTest {
             assertEquals("👑", theme.iconEmoji)
             assertEquals("Levels 81 - 100", theme.levelRangeText)
         }
+
+        val addedAreas = listOf(
+            Triple(101..120, MapAreaId.CRYSTAL_COVE, "🪸"),
+            Triple(121..140, MapAreaId.THORNWOOD_REACH, "🌿"),
+            Triple(141..160, MapAreaId.MOONLIT_REEF, "🌙"),
+            Triple(161..180, MapAreaId.EMBER_HEARTLANDS, "🔥"),
+            Triple(181..200, MapAreaId.EVERHEART_CITADEL, "🏰")
+        )
+        for ((range, area, emoji) in addedAreas) {
+            for (lvl in range) {
+                assertEquals(area, MapAreaId.fromLevel(lvl))
+                val theme = MapAreaTheme.getThemeForLevel(lvl)
+                assertEquals(area.title, theme.name)
+                assertEquals(emoji, theme.iconEmoji)
+                assertEquals("Levels ${range.first} - ${range.last}", theme.levelRangeText)
+            }
+        }
     }
 
     @Test
     fun testAreaThemePalettesAndGradients() {
         val allAreas = MapAreaId.values()
-        assertEquals(5, allAreas.size)
+        assertEquals(10, allAreas.size)
 
         allAreas.forEach { areaId ->
             val theme = MapAreaTheme.getThemeForArea(areaId)
@@ -166,8 +183,13 @@ class LevelMapSystemTest {
         assertEquals(81, MapAreaId.HEART_KINGDOM.startLevel)
         assertEquals(100, MapAreaId.HEART_KINGDOM.endLevel)
 
-        // 20 levels per area * 5 areas = 100 levels total
+        assertEquals(101, MapAreaId.CRYSTAL_COVE.startLevel)
+        assertEquals(120, MapAreaId.CRYSTAL_COVE.endLevel)
+        assertEquals(181, MapAreaId.EVERHEART_CITADEL.startLevel)
+        assertEquals(200, MapAreaId.EVERHEART_CITADEL.endLevel)
+
+        // 20 levels per area * 10 areas = 200 levels total
         val totalLevels = MapAreaId.values().sumOf { it.endLevel - it.startLevel + 1 }
-        assertEquals(100, totalLevels)
+        assertEquals(200, totalLevels)
     }
 }

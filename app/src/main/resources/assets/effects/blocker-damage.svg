@@ -1,6 +1,0 @@
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-                <g id="effect-root">
-                    <path d="M 120,120 L 256,256 L 392,120 M 256,256 L 256,420" fill="none" stroke="#FF5252" stroke-width="24" stroke-linecap="round"/>
-<circle cx="256" cy="256" r="60" fill="#FFEB3B"/>
-                </g>
-            </svg>

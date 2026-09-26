@@ -1,0 +1,35 @@
+{
+  "id": 117,
+  "name": "Crystal Cove: Starfish Promenade",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "S2", "O", "O", "O", "S2", "O", "O"],
+      ["O", "O", "O", "S2", "O", "S2", "O", "O", "O"],
+      ["O", "O", "BR(PINK)", "O", "O", "O", "BR(PINK)", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 26,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [32800, 50800, 74800],
+  "randomSeed": 117,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 4
+    },
+    {
+      "type": "REPAIR",
+      "amount": 2
+    }
+  ]
+}

@@ -203,6 +203,7 @@ class LevelJsonParser {
             upper == "FIRE" || upper == "FIRE_HEART" -> SpecialHeartType.FIRE_HEART
             upper == "BOMB" || upper == "BOMB_HEART" -> SpecialHeartType.BOMB_HEART
             upper == "RAINBOW" || upper == "RAINBOW_HEART" -> SpecialHeartType.RAINBOW_HEART
+            upper == "LIGHT" || upper == "LIGHT_HEART" -> SpecialHeartType.LIGHT_HEART
             else -> null
         }
     }

@@ -1,0 +1,36 @@
+{
+  "id": 194,
+  "name": "Everheart Citadel: Dancing Kelp",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "S2", "O", "S2", "O", "B", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "S2", "O", "B", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "S2", "O", "B", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 22,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [45900, 69900, 99900],
+  "randomSeed": 194,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 4
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "BARBED",
+      "amount": 3
+    }
+  ]
+}

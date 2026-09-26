@@ -1,0 +1,36 @@
+{
+  "id": 177,
+  "name": "Ember Heartlands: Starfish Promenade",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "S2", "O", "O", "O", "S2", "O", "O"],
+      ["O", "O", "O", "S2", "O", "S2", "O", "O", "O"],
+      ["O", "O", "W2", "O", "O", "O", "W2", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 23,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [43300, 65800, 94300],
+  "randomSeed": 177,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 4
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 2
+    }
+  ]
+}

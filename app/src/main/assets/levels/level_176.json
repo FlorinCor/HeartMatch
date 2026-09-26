@@ -1,0 +1,36 @@
+{
+  "id": 176,
+  "name": "Ember Heartlands: Moonstone Shelf",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "O", "O", "B", "O", "O", "O"],
+      ["O", "O", "O", "B", "O", "O", "C(GREEN)", "O", "O"],
+      ["O", "O", "C(GREEN)", "O", "O", "C(GREEN)", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 23,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [43000, 65500, 94000],
+  "randomSeed": 176,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "BARBED",
+      "amount": 3
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "GREEN",
+      "amount": 22
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": 127,
+  "name": "Thornwood Reach: Silver Shoals",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "O", "O", "O", "B", "O", "O"],
+      ["O", "O", "O", "B", "O", "BR(GREEN)", "O", "O", "O"],
+      ["O", "O", "BR(GREEN)", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 25,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [33300, 52800, 78300],
+  "randomSeed": 127,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "BARBED",
+      "amount": 3
+    },
+    {
+      "type": "REPAIR",
+      "amount": 2
+    }
+  ]
+}

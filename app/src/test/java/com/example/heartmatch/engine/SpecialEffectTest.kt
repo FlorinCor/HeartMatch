@@ -285,17 +285,10 @@ class SpecialEffectTest {
             tileB = fireB
         )
 
-        // 3 rows (2..4) and 3 columns (3..5) centered on target (3, 4)
-        for (r in 2..4) {
-            for (c in 0 until 7) {
-                assertTrue(result.clearedCoords.contains(Coord(r, c)))
-            }
-        }
-        for (c in 3..5) {
-            for (r in 0 until 7) {
-                assertTrue(result.clearedCoords.contains(Coord(r, c)))
-            }
-        }
+        // One row and column, with no wide-cross cells.
+        for (c in 0 until 7) assertTrue(Coord(3, c) in result.clearedCoords)
+        for (r in 0 until 7) assertTrue(Coord(r, 4) in result.clearedCoords)
+        assertFalse(Coord(2, 0) in result.clearedCoords)
     }
 
     @Test

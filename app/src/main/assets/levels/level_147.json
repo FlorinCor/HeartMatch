@@ -1,0 +1,34 @@
+{
+  "id": 147,
+  "name": "Moonlit Reef: Silver Shoals",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "D", "O", "O", "O", "D", "O", "O"],
+      ["O", "O", "O", "D", "O", "BR(PINK)", "O", "O", "O"],
+      ["O", "O", "BR(PINK)", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [36800, 57800, 84800],
+  "randomSeed": 147,
+  "objectives": [
+    {
+      "type": "CLEAR_DARK",
+      "amount": 3
+    },
+    {
+      "type": "REPAIR",
+      "amount": 2
+    }
+  ]
+}

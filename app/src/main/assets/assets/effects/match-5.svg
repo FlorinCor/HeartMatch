@@ -1,8 +1,0 @@
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-                <g id="effect-root">
-                    <circle cx="256" cy="256" r="220" fill="none" stroke="#00E676" stroke-width="28"/>
-<circle cx="256" cy="256" r="160" fill="none" stroke="#00B0FF" stroke-width="24"/>
-<circle cx="256" cy="256" r="100" fill="none" stroke="#D500F9" stroke-width="20"/>
-<polygon points="256,10 285,210 502,256 285,302 256,502 227,302 10,256 227,210" fill="#FFFFFF"/>
-                </g>
-            </svg>

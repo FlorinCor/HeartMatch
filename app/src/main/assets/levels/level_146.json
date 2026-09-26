@@ -1,0 +1,36 @@
+{
+  "id": 146,
+  "name": "Moonlit Reef: Coral Switchback",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "C(RED)", "O", "O", "C(RED)", "O", "O", "O"],
+      ["O", "O", "O", "C(RED)", "O", "O", "C(RED)", "O", "O"],
+      ["O", "O", "C(RED)", "O", "O", "B", "O", "O", "O"],
+      ["O", "O", "O", "B", "O", "O", "B", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [36500, 57500, 84500],
+  "randomSeed": 146,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "CHAINED",
+      "amount": 5
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "BARBED",
+      "amount": 3
+    }
+  ]
+}

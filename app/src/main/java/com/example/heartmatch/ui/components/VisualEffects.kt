@@ -32,8 +32,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -55,14 +57,19 @@ data class Particle(
     val vy: Float,
     val size: Float,
     val color: Color,
-    val isHeart: Boolean = false
+    val isHeart: Boolean = false,
+    val isShard: Boolean = false,
+    val isBubble: Boolean = false
 )
+
+enum class DebrisMaterial { WOOD, STONE, ICE }
 
 data class ParticleBurst(
     val id: Long = System.nanoTime(),
     val origin: Offset,
     val color: Color,
-    val particles: List<Particle>
+    val particles: List<Particle>,
+    val durationMs: Int = 550
 )
 
 data class ScorePopupData(
@@ -118,6 +125,50 @@ fun createBurstParticles(origin: Offset, baseColor: Color, count: Int = 16): Lis
     }
 }
 
+fun createDebrisParticles(origin: Offset, material: DebrisMaterial, count: Int): List<Particle> {
+    val rng = Random(System.nanoTime())
+    val woodColors = listOf(Color(0xFF8A4C20), Color(0xFFC27A39), Color(0xFFE0A45E), Color(0xFF633414))
+    val stoneColors = listOf(Color(0xFF55555F), Color(0xFF85858F), Color(0xFFB5B5BE), Color(0xFF414149))
+    val iceColors = listOf(Color(0xFFB9F2FF), Color(0xFFE8FCFF), Color(0xFF72D8FA), Color(0xFF4CA6D9))
+    val palette = when (material) {
+        DebrisMaterial.WOOD -> woodColors
+        DebrisMaterial.STONE -> stoneColors
+        DebrisMaterial.ICE -> iceColors
+    }
+
+    return (0 until count).map { index ->
+        val angle = rng.nextFloat() * 2f * PI.toFloat()
+        val speed = rng.nextFloat() * 150f + 90f
+        Particle(
+            x = origin.x,
+            y = origin.y,
+            vx = cos(angle) * speed,
+            vy = sin(angle) * speed,
+            size = if (material == DebrisMaterial.WOOD) rng.nextFloat() * 5f + 4f else rng.nextFloat() * 5f + 3f,
+            color = palette[rng.nextInt(palette.size)],
+            isShard = material != DebrisMaterial.STONE || index % 3 != 0
+        )
+    }
+}
+
+fun createBubblePopParticles(origin: Offset, count: Int = 18): List<Particle> {
+    val rng = Random(System.nanoTime())
+    val colors = listOf(Color(0xFFD9F6FF), Color(0xFF9DE5FF), Color.White, Color(0xFF6ECBF2))
+    return (0 until count).map {
+        val angle = rng.nextFloat() * 2f * PI.toFloat()
+        val speed = rng.nextFloat() * 125f + 65f
+        Particle(
+            x = origin.x,
+            y = origin.y,
+            vx = cos(angle) * speed,
+            vy = sin(angle) * speed,
+            size = rng.nextFloat() * 5f + 4f,
+            color = colors[rng.nextInt(colors.size)],
+            isBubble = true
+        )
+    }
+}
+
 @Composable
 fun ParticleBurstEffect(
     burst: ParticleBurst,
@@ -128,7 +179,7 @@ fun ParticleBurstEffect(
     LaunchedEffect(burst.id) {
         animProgress.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 550, easing = LinearOutSlowInEasing)
+            animationSpec = tween(durationMillis = burst.durationMs, easing = LinearOutSlowInEasing)
         )
         onFinished()
     }
@@ -140,14 +191,47 @@ fun ParticleBurstEffect(
         burst.particles.forEach { p ->
             val curX = p.x + p.vx * progress
             val curY = p.y + p.vy * progress + (80f * progress * progress) // gravity
-            val curSize = p.size * (1f - progress * 0.5f)
+            val curSize = if (p.isBubble) p.size * (0.7f + progress * 0.65f) else p.size * (1f - progress * 0.5f)
 
-            if (p.isHeart) {
+            if (p.isBubble) {
+                drawCircle(
+                    color = p.color.copy(alpha = alpha * 0.22f),
+                    radius = curSize,
+                    center = Offset(curX, curY)
+                )
+                drawCircle(
+                    color = p.color.copy(alpha = alpha * 0.85f),
+                    radius = curSize,
+                    center = Offset(curX, curY),
+                    style = Stroke(width = (curSize * 0.17f).coerceAtLeast(1f))
+                )
+                drawCircle(
+                    color = Color.White.copy(alpha = alpha * 0.9f),
+                    radius = curSize * 0.18f,
+                    center = Offset(curX - curSize * 0.35f, curY - curSize * 0.38f)
+                )
+            } else if (p.isHeart) {
                 val heartPath = createHeartPath(curSize * 2f, curSize * 2f, 0f)
                 translate(curX - curSize, curY - curSize) {
                     drawPath(
                         path = heartPath,
                         color = p.color.copy(alpha = alpha)
+                    )
+                }
+            } else if (p.isShard) {
+                rotate(progress * 240f + p.vx, pivot = Offset(curX, curY)) {
+                    val shard = Path().apply {
+                        moveTo(curX - curSize, curY - curSize * 0.2f)
+                        lineTo(curX + curSize * 0.8f, curY - curSize * 0.55f)
+                        lineTo(curX + curSize * 0.35f, curY + curSize * 0.75f)
+                        close()
+                    }
+                    drawPath(shard, color = p.color.copy(alpha = alpha))
+                    drawLine(
+                        color = Color.White.copy(alpha = alpha * 0.45f),
+                        start = Offset(curX - curSize * 0.45f, curY - curSize * 0.10f),
+                        end = Offset(curX + curSize * 0.38f, curY - curSize * 0.38f),
+                        strokeWidth = (curSize * 0.12f).coerceAtLeast(1f)
                     )
                 }
             } else {

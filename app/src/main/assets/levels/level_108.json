@@ -1,0 +1,35 @@
+{
+  "id": 108,
+  "name": "Crystal Cove: The Hidden Grotto",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "BR(PINK)", "O", "O", "O", "BR(PINK)", "O", "O"],
+      ["O", "O", "O", "BR(PINK)", "O", "BR(PINK)", "O", "O", "O"],
+      ["O", "O", "W2", "O", "O", "O", "W2", "O", "O"],
+      ["O", "O", "O", "W2", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 26,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [30100, 48100, 72100],
+  "randomSeed": 108,
+  "objectives": [
+    {
+      "type": "REPAIR",
+      "amount": 4
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "BLUE",
+      "amount": 22
+    }
+  ]
+}

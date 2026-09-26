@@ -1,17 +1,8 @@
 package com.example.heartmatch.engine.core
 
-import com.example.heartmatch.engine.model.BlockerType
-import com.example.heartmatch.engine.model.Board
-import com.example.heartmatch.engine.model.Coord
-import com.example.heartmatch.engine.model.EngineEvent
-import com.example.heartmatch.engine.model.GameState
-import com.example.heartmatch.engine.model.GameStatus
-import com.example.heartmatch.engine.model.HeartColor
-import com.example.heartmatch.engine.model.MatchGroup
-import com.example.heartmatch.engine.model.ObjectiveType
-import com.example.heartmatch.engine.model.SpecialHeartType
-import com.example.heartmatch.engine.model.Tile
+import com.example.heartmatch.engine.model.*
 
+/** All clears, including free tools, share objective accounting and cascade resolution. */
 class TurnPipeline(
     private val matchDetector: MatchDetector = MatchDetector(),
     private val specialEffectHandler: SpecialEffectHandler = SpecialEffectHandler(),
@@ -21,427 +12,197 @@ class TurnPipeline(
     private val rng: DeterministicRng = DeterministicRng(),
     private val moveValidator: MoveValidator = MoveValidator(matchDetector, specialEffectHandler),
     private val boardReshuffler: BoardReshuffler = BoardReshuffler(matchDetector, moveValidator),
-    private val allowedColors: List<HeartColor> = listOf(
-        HeartColor.RED,
-        HeartColor.PINK,
-        HeartColor.BLUE,
-        HeartColor.GREEN,
-        HeartColor.YELLOW
-    )
+    private val allowedColors: List<HeartColor> = listOf(HeartColor.RED, HeartColor.PINK, HeartColor.BLUE, HeartColor.GREEN, HeartColor.YELLOW)
 ) {
+    data class TurnExecutionResult(val events: List<EngineEvent>, val scoreDelta: Int, val combosAchieved: Int, val isSuccessfulMove: Boolean)
+    private data class Impact(val points: Int, val damagedDark: Boolean)
 
-    data class TurnExecutionResult(
-        val events: List<EngineEvent>,
-        val scoreDelta: Int,
-        val combosAchieved: Int,
-        val isSuccessfulMove: Boolean
-    )
-
-    fun executeSwap(
-        gameState: GameState,
-        from: Coord,
-        to: Coord
-    ): TurnExecutionResult {
-        val board = gameState.board
+    fun executeSwap(state: GameState, from: Coord, to: Coord): TurnExecutionResult {
+        if (state.status != GameStatus.READY_FOR_INPUT || state.movesRemaining <= 0 || !from.isAdjacentTo(to))
+            return TurnExecutionResult(emptyList(), 0, 0, false)
+        val board = state.board
+        val a = board[from]?.takeIf { it.isPlayable }?.tile
+        val b = board[to]?.takeIf { it.isPlayable }?.tile
+        if (a == null || b == null || !a.isMovable || !b.isMovable) return TurnExecutionResult(emptyList(), 0, 0, false)
+        prepareTargets(state)
         val events = mutableListOf<EngineEvent>()
-        var totalScoreDelta = 0
-        var darkHeartDamagedThisTurn = false
-
-        val cellFrom = board[from]
-        val cellTo = board[to]
-
-        if (cellFrom == null || cellTo == null || !cellFrom.isPlayable || !cellTo.isPlayable) {
-            return TurnExecutionResult(emptyList(), 0, 0, false)
-        }
-
-        val tileFrom = cellFrom.tile
-        val tileTo = cellTo.tile
-
-        if (tileFrom == null || tileTo == null || !tileFrom.isMovable || !tileTo.isMovable) {
-            return TurnExecutionResult(emptyList(), 0, 0, false)
-        }
-
-        // 1. Check special interaction swap
-        val isSpecialSwap = specialEffectHandler.isSpecialInteraction(tileFrom, tileTo)
-
-        if (isSpecialSwap) {
-            // Deduct move
-            gameState.movesRemaining--
-            gameState.status = GameStatus.RESOLVING
-
-            events.add(EngineEvent.Swap(from, to, isRollback = false))
-
-            // Execute special activation
-            val specResult = specialEffectHandler.handleSpecialSwap(board, from, to, tileFrom, tileTo)
-            events.addAll(specResult.triggeredEvents)
-
-            // Direct damage to blockers
-            val blockerResult = blockerHandler.applyBlockerDamage(board, emptySet(), specResult.clearedCoords)
-            events.addAll(blockerResult.events)
-            if (blockerResult.damagedBlockers.any { it.second.blockerType == BlockerType.DARK_HEART } ||
-                blockerResult.destroyedBlockers.any { it.second.blockerType == BlockerType.DARK_HEART }
-            ) {
-                darkHeartDamagedThisTurn = true
-            }
-
-            for (damaged in blockerResult.damagedBlockers) {
-                if (damaged.second.blockerType == BlockerType.BROKEN_HEART) {
-                    updateBrokenHeartRepairedObjectives(gameState, 1)
-                }
-            }
-
-            for (destroyed in blockerResult.destroyedBlockers) {
-                updateBlockerObjectives(gameState, destroyed.second.blockerType)
-                if (destroyed.second.blockerType == BlockerType.BROKEN_HEART) {
-                    updateBrokenHeartRepairedObjectives(gameState, 1)
-                }
-            }
-
-            // Update cell clearing and board clearing objectives
-            updateSpecificCellObjectives(gameState, specResult.clearedCoords)
-            updateClearBoardObjectives(gameState, specResult.clearedCoords.size)
-
-            // Clear cleared tiles (except blockers with payload or remaining durability)
-            for (coord in specResult.clearedCoords) {
-                val tile = board.getTile(coord)
-                if (tile !is Tile.Blocker) {
-                    board.setTile(coord, null)
-                }
-            }
-
-            val scoreFromSpecial = specResult.clearedCoords.size * 120 + specResult.bonusScore
-            totalScoreDelta += scoreFromSpecial
-            updateGiftObjectives(gameState, specResult.giftHeartsClearedCount)
-
-            // Apply gravity and spawn
-            val dropEvents = gravityManager.applyGravity(board)
-            events.addAll(dropEvents)
-            val spawnEvents = tileSpawner.spawnNewTiles(board)
-            events.addAll(spawnEvents)
-
-            // Continue to cascade loop
-            val cascadeResult = runCascadeLoop(
-                gameState = gameState,
-                initialCombo = 1,
-                playerSwappedCoords = null,
-                initialDarkHeartDamaged = darkHeartDamagedThisTurn
-            )
-            events.addAll(cascadeResult.events)
-            totalScoreDelta += cascadeResult.scoreDelta
-            darkHeartDamagedThisTurn = cascadeResult.darkHeartDamaged
-
-            finishTurn(gameState, events, totalScoreDelta, darkHeartDamagedThisTurn)
-            return TurnExecutionResult(events, totalScoreDelta, cascadeResult.combos, true)
-        }
-
-        // 2. Normal swap: execute on board
-        board.swap(from, to)
-        val initialMatches = matchDetector.detectMatches(board, from to to)
-
-        if (initialMatches.isEmpty()) {
-            // Rollback swap
+        val startingScore = state.score
+        state.comboCount = 0
+        var darkDamaged = false
+        if (specialEffectHandler.isSpecialInteraction(a, b)) {
+            state.movesRemaining--
+            state.status = GameStatus.RESOLVING
+            events += EngineEvent.Swap(from, to, false)
+            val before = board.clone()
+            val effect = specialEffectHandler.handleSpecialSwap(board, from, to, a, b)
+            val impact = resolveImpact(state, before, emptySet(), emptyMap(), effect, 1, events)
+            darkDamaged = impact.damagedDark
+            state.comboCount = 1
+            drop(state, events)
+        } else {
             board.swap(from, to)
-            events.add(EngineEvent.Swap(from, to, isRollback = true))
-            return TurnExecutionResult(events, 0, 0, false)
+            if (matchDetector.detectMatches(board, from to to).isEmpty()) {
+                board.swap(from, to)
+                return TurnExecutionResult(listOf(EngineEvent.Swap(from, to, true)), 0, 0, false)
+            }
+            state.movesRemaining--
+            state.status = GameStatus.RESOLVING
+            events += EngineEvent.Swap(from, to, false)
         }
-
-        // Swap is valid!
-        gameState.movesRemaining--
-        gameState.status = GameStatus.RESOLVING
-        events.add(EngineEvent.Swap(from, to, isRollback = false))
-
-        // Run cascade loop
-        val cascadeResult = runCascadeLoop(
-            gameState = gameState,
-            initialCombo = 0,
-            playerSwappedCoords = from to to,
-            initialDarkHeartDamaged = false
-        )
-        events.addAll(cascadeResult.events)
-        totalScoreDelta += cascadeResult.scoreDelta
-        darkHeartDamagedThisTurn = cascadeResult.darkHeartDamaged
-
-        finishTurn(gameState, events, totalScoreDelta, darkHeartDamagedThisTurn)
-        return TurnExecutionResult(events, totalScoreDelta, cascadeResult.combos, true)
+        darkDamaged = cascade(state, events, if (state.comboCount == 0) from to to else null) || darkDamaged
+        finishTurn(state, events, startingScore, darkDamaged, advanceHazards = true)
+        return TurnExecutionResult(events, state.score - startingScore, state.comboCount, true)
     }
 
-    private data class CascadeLoopResult(
-        val events: List<EngineEvent>,
-        val scoreDelta: Int,
-        val combos: Int,
-        val darkHeartDamaged: Boolean
-    )
-
-    private fun runCascadeLoop(
-        gameState: GameState,
-        initialCombo: Int,
-        playerSwappedCoords: Pair<Coord, Coord>?,
-        initialDarkHeartDamaged: Boolean
-    ): CascadeLoopResult {
-        val board = gameState.board
+    fun executeHammer(state: GameState, coord: Coord): List<EngineEvent> {
+        val tile = state.board[coord]?.takeIf { it.isPlayable }?.tile ?: return emptyList()
+        if (state.status != GameStatus.READY_FOR_INPUT) return emptyList()
+        prepareTargets(state)
         val events = mutableListOf<EngineEvent>()
-        var combo = initialCombo
-        var totalScoreDelta = 0
-        var darkHeartDamaged = initialDarkHeartDamaged
-        var currentSwap = playerSwappedCoords
+        val startScore = state.score
+        state.status = GameStatus.RESOLVING
+        state.comboCount = 1
+        val before = state.board.clone()
+        val effect = if (tile is Tile.Special) specialEffectHandler.triggerSpecials(state.board, listOf(coord to tile))
+            else SpecialEffectHandler.SpecialActivationResult(setOf(coord), emptyList())
+        // A hammer strikes exactly its target; a struck special still produces its usual blast.
+        resolveImpact(state, before, emptySet(), emptyMap(), effect, 1, events, adjacentDamage = tile is Tile.Special)
+        drop(state, events)
+        cascade(state, events, null)
+        finishTurn(state, events, startScore, false, advanceHazards = false)
+        return events
+    }
 
-        var cascadeCount = 0
-        val maxCascades = 100
+    fun reshuffleCurrentBoard(board: Board): Boolean = boardReshuffler.reshuffle(board, allowedColors, rng)
 
-        while (cascadeCount < maxCascades) {
-            cascadeCount++
-            val matches = matchDetector.detectMatches(board, currentSwap)
-            if (matches.isEmpty()) break
+    private fun prepareTargets(state: GameState) {
+        specialEffectHandler.objectives = state.objectives.filterNot { it.isFulfilled }.map { it.config }
+    }
 
-            combo++
-            var stepScore = 0
-            val allMatchedCoords = mutableSetOf<Coord>()
-            val createdSpecials = mutableMapOf<Coord, Tile.Special>()
-            val specialsToTrigger = mutableListOf<Pair<Coord, Tile.Special>>()
-
+    private fun cascade(state: GameState, events: MutableList<EngineEvent>, swapped: Pair<Coord, Coord>?): Boolean {
+        var swap = swapped
+        var darkDamaged = false
+        repeat(100) {
+            val matches = matchDetector.detectMatches(state.board, swap)
+            if (matches.isEmpty()) return darkDamaged
+            state.comboCount++
+            val before = state.board.clone()
+            val matched = matches.flatMap { it.matchedCoords }.toSet()
+            val created = mutableMapOf<Coord, Tile.Special>()
             for (group in matches) {
-                events.add(
-                    EngineEvent.Match(
-                        coords = group.matchedCoords,
-                        color = group.color,
-                        shape = group.shape,
-                        comboIndex = combo
-                    )
-                )
-
-                // Track objective for matched color
-                updateHeartCollectionObjectives(gameState, group.color, group.matchedCoords.size)
-
-                // Check special creation
-                if (group.createdSpecial != null && group.specialSpawnCoord != null) {
-                    val specialTile = Tile.Special(
-                        specialType = group.createdSpecial,
-                        baseColor = group.color,
-                        fireDirection = group.createdSpecialDirection,
-                        bombRadius = 1
-                    )
-                    createdSpecials[group.specialSpawnCoord] = specialTile
-                    events.add(EngineEvent.SpecialCreated(group.specialSpawnCoord, group.createdSpecial))
-                    updateSpecialCreationObjectives(gameState, group.createdSpecial)
-                }
-
-                allMatchedCoords.addAll(group.matchedCoords)
-                stepScore += group.matchedCoords.size * 100
-                if (group.createdSpecial != null) {
-                    stepScore += 200
+                events += EngineEvent.Match(group.matchedCoords, group.color, group.shape, state.comboCount)
+                val type = group.createdSpecial
+                val coord = group.specialSpawnCoord?.takeIf { before.getTile(it) is Tile.Normal }
+                    ?: group.matchedCoords.firstOrNull { before.getTile(it) is Tile.Normal }
+                if (type != null && coord != null) {
+                    created[coord] = Tile.Special(specialType = type, baseColor = group.color, fireDirection = group.createdSpecialDirection)
+                    events += EngineEvent.SpecialCreated(coord, type)
+                    state.objectives.filter { it.config.type in listOf(ObjectiveType.CREATE_SPECIALS, ObjectiveType.COLLECT_SPECIAL) && it.config.targetSpecial != SpecialHeartType.GIFT_HEART && (it.config.targetSpecial == null || it.config.targetSpecial == type) }.forEach { advance(it, 1) }
                 }
             }
-
-            // Check if any existing specials were inside the matched coords
-            for (coord in allMatchedCoords) {
-                val tile = board.getTile(coord)
-                if (tile is Tile.Special && coord !in createdSpecials) {
-                    specialsToTrigger.add(coord to tile)
-                }
-            }
-
-            // Apply special effects if any specials were triggered
-            val directHitCoords = mutableSetOf<Coord>()
-            if (specialsToTrigger.isNotEmpty()) {
-                val specResult = specialEffectHandler.triggerSpecials(board, specialsToTrigger, allMatchedCoords)
-                events.addAll(specResult.triggeredEvents)
-                directHitCoords.addAll(specResult.clearedCoords)
-                stepScore += specResult.clearedCoords.size * 100 + specResult.bonusScore
-                updateGiftObjectives(gameState, specResult.giftHeartsClearedCount)
-            }
-
-            // Apply blocker damage
-            val blockerResult = blockerHandler.applyBlockerDamage(board, allMatchedCoords, directHitCoords)
-            events.addAll(blockerResult.events)
-
-            if (blockerResult.damagedBlockers.any { it.second.blockerType == BlockerType.DARK_HEART } ||
-                blockerResult.destroyedBlockers.any { it.second.blockerType == BlockerType.DARK_HEART }
-            ) {
-                darkHeartDamaged = true
-            }
-
-            for (damaged in blockerResult.damagedBlockers) {
-                if (damaged.second.blockerType == BlockerType.BROKEN_HEART) {
-                    updateBrokenHeartRepairedObjectives(gameState, 1)
-                }
-            }
-
-            for (destroyed in blockerResult.destroyedBlockers) {
-                updateBlockerObjectives(gameState, destroyed.second.blockerType)
-                if (destroyed.second.blockerType == BlockerType.BROKEN_HEART) {
-                    updateBrokenHeartRepairedObjectives(gameState, 1)
-                }
-                stepScore += 150
-            }
-
-            // Update specific cell and clear board objectives
-            val allAffected = allMatchedCoords + directHitCoords
-            updateSpecificCellObjectives(gameState, allAffected)
-            updateClearBoardObjectives(gameState, allAffected.size)
-
-            // Remove cleared hearts from board (placing created specials in their designated positions)
-            for (coord in allAffected) {
-                if (coord in createdSpecials) {
-                    board.setTile(coord, createdSpecials[coord])
-                } else {
-                    val currentTile = board.getTile(coord)
-                    if (currentTile !is Tile.Blocker) {
-                        board.setTile(coord, null)
-                    }
-                }
-            }
-
-            // Combo multiplier on step score
-            val multiplier = 1.0 + (combo - 1) * 0.5
-            val finalStepScore = (stepScore * multiplier).toInt()
-            totalScoreDelta += finalStepScore
-
-            // Apply gravity
-            val dropEvents = gravityManager.applyGravity(board)
-            events.addAll(dropEvents)
-
-            // Spawn new tiles
-            val spawnEvents = tileSpawner.spawnNewTiles(board)
-            events.addAll(spawnEvents)
-
-            currentSwap = null
+            val triggers = matched.filterNot { it in created }.mapNotNull { c -> (before.getTile(c) as? Tile.Special)?.let { c to it } }
+            val effect = specialEffectHandler.triggerSpecials(state.board, triggers, matched)
+            val impact = resolveImpact(state, before, matched, created, effect, state.comboCount, events)
+            darkDamaged = darkDamaged || impact.damagedDark
+            drop(state, events)
+            swap = null
         }
-
-        return CascadeLoopResult(events, totalScoreDelta, combo, darkHeartDamaged)
+        // An unusually long chain must leave a stable board, not an unrelated free match.
+        boardReshuffler.reshuffle(state.board, allowedColors, rng)
+        events += EngineEvent.BoardReshuffled("CASCADE_LIMIT")
+        return darkDamaged
     }
 
-    private fun finishTurn(
-        gameState: GameState,
-        events: MutableList<EngineEvent>,
-        scoreDelta: Int,
-        darkHeartDamagedThisTurn: Boolean
-    ) {
-        // Dark heart spread check
-        val spreadEvent = blockerHandler.processDarkHeartSpread(gameState.board, darkHeartDamagedThisTurn, rng)
-        if (spreadEvent != null) {
-            events.add(spreadEvent)
+    private fun resolveImpact(
+        state: GameState, before: Board, matched: Set<Coord>, created: Map<Coord, Tile.Special>,
+        effect: SpecialEffectHandler.SpecialActivationResult, combo: Int, events: MutableList<EngineEvent>,
+        adjacentDamage: Boolean = true
+    ): Impact {
+        events += effect.triggeredEvents
+        val lightHits = effect.triggeredEvents.filter { it.specialType == SpecialHeartType.LIGHT_HEART }.flatMap { it.affectedCoords }.toSet()
+        effect.triggeredEvents.filter { it.specialType == SpecialHeartType.LIGHT_HEART }.forEach { events += EngineEvent.LightHeartActivated(it.affectedCoords.toList()) }
+        val affected = matched + effect.clearedCoords
+        val damage = blockerHandler.applyBlockerDamage(state.board, matched, effect.clearedCoords, lightHits, adjacentDamage)
+        events += damage.events
+        val hearts = affected.filter { before.getTile(it) != null && before.getTile(it) !is Tile.Blocker }
+        // Read colours before rainbow conversion and count each affected heart once.
+        for (coord in hearts) {
+            val tile = before.getTile(coord)!!
+            state.objectives.filter {
+                it.config.type in listOf(ObjectiveType.COLLECT_COLOR, ObjectiveType.COLLECT_HEARTS) && it.config.targetSpecial == null &&
+                    (it.config.targetColor == null || it.config.targetColor == tile.matchColor)
+            }.forEach { advance(it, 1) }
         }
-
-        // Update score
-        gameState.score += scoreDelta
-        updateStars(gameState)
-        events.add(EngineEvent.ScoreChanged(gameState.score, scoreDelta, gameState.comboCount))
-
-        // Check score objectives
-        updateScoreObjectives(gameState)
-
-        // Check game status (won / lost / ready)
-        when {
-            gameState.isWon -> {
-                gameState.status = GameStatus.OBJECTIVE_COMPLETED
-                events.add(EngineEvent.GameWon(gameState.score, gameState.earnedStars))
-            }
-            gameState.isLost -> {
-                gameState.status = GameStatus.GAME_OVER
-                events.add(EngineEvent.GameOver(if (gameState.movesRemaining <= 0) "OUT_OF_MOVES" else "OUT_OF_TIME"))
-            }
-            else -> {
-                gameState.status = GameStatus.READY_FOR_INPUT
-
-                // Dead-board detection and automatic reshuffle
-                if (!boardReshuffler.hasValidMoves(gameState.board)) {
-                    val reshuffled = boardReshuffler.reshuffle(gameState.board, allowedColors, rng)
-                    if (reshuffled) {
-                        events.add(EngineEvent.BoardReshuffled("NO_VALID_MOVES"))
-                    }
+        for ((_, blocker) in damage.destroyedBlockers) {
+            state.objectives.filter {
+                when (it.config.type) {
+                    ObjectiveType.DESTROY_BLOCKERS, ObjectiveType.CLEAR_BLOCKER -> it.config.targetBlocker == null || it.config.targetBlocker == blocker.blockerType
+                    ObjectiveType.CLEAR_DARK_HEARTS -> blocker.blockerType == BlockerType.DARK_HEART
+                    ObjectiveType.REPAIR_BROKEN -> blocker.blockerType in listOf(BlockerType.BROKEN_HEART, BlockerType.STITCHED_HEART)
+                    else -> false
                 }
+            }.forEach { advance(it, 1) }
+        }
+        val gifts = hearts.count { (before.getTile(it) as? Tile.Special)?.specialType == SpecialHeartType.GIFT_HEART }
+        state.objectives.filter { it.config.type == ObjectiveType.COLLECT_GIFT || it.config.targetSpecial == SpecialHeartType.GIFT_HEART }.forEach { advance(it, gifts) }
+        val cleared = hearts.toSet() + damage.destroyedBlockers.map { it.first }
+        state.objectives.forEach { obj ->
+            when (obj.config.type) {
+                ObjectiveType.CLEAR_SPECIFIC_CELLS -> { obj.clearedCells += cleared.intersect(obj.config.targetCells); obj.currentCount = obj.clearedCells.size }
+                ObjectiveType.CLEAR_BOARD -> advance(obj, cleared.size)
+                else -> Unit
             }
         }
+        // Preserve released payloads and repaired hearts, which are separate from the destroyed shell.
+        events += EngineEvent.TilesCleared(hearts.toSet())
+        hearts.forEach { state.board.setTile(it, created[it]) }
+        created.forEach { (coord, tile) -> state.board.setTile(coord, tile) }
+        val heartPoints = hearts.size * 100
+        val creationPoints = created.size * 200
+        val blockerPoints = damage.destroyedBlockers.size * 150
+        val base = heartPoints + creationPoints + blockerPoints + effect.bonusScore
+        val multiplier = 1.0 + (combo - 1).coerceAtLeast(0) * 0.5
+        val total = (base * multiplier).toInt()
+        state.score += total
+        state.scoreBreakdown = state.scoreBreakdown.plus(ScoreBreakdown(heartPoints, creationPoints, blockerPoints, effect.bonusScore, total - base))
+        events += EngineEvent.ScoreStep(affected.firstOrNull() ?: Coord(0, 0), total, multiplier)
+        return Impact(total, (damage.damagedBlockers + damage.destroyedBlockers).any { it.second.blockerType == BlockerType.DARK_HEART })
     }
 
-    private fun updateStars(gameState: GameState) {
-        val (s1, s2, s3) = gameState.starThresholds
-        gameState.earnedStars = when {
-            gameState.score >= s3 -> 3
-            gameState.score >= s2 -> 2
-            gameState.score >= s1 -> 1
+    private fun drop(state: GameState, events: MutableList<EngineEvent>) {
+        events += gravityManager.applyGravity(state.board)
+        events += tileSpawner.spawnNewTiles(state.board)
+    }
+
+    private fun finishTurn(state: GameState, events: MutableList<EngineEvent>, startingScore: Int, darkDamaged: Boolean, advanceHazards: Boolean) {
+        state.objectives.filter { it.config.type in listOf(ObjectiveType.SCORE, ObjectiveType.REACH_SCORE) }.forEach { it.currentCount = state.score.coerceAtMost(it.config.targetCount) }
+        if (state.isWon) {
+            // Purchased extra moves are excluded from the efficiency reward.
+            val bonus = (state.movesRemaining - state.extraMovesGranted).coerceAtLeast(0) * 100
+            state.score += bonus
+            state.scoreBreakdown = state.scoreBreakdown.copy(remainingMoves = bonus)
+            state.status = GameStatus.OBJECTIVE_COMPLETED
+        } else if (state.isLost) state.status = GameStatus.GAME_OVER
+        else {
+            if (advanceHazards) blockerHandler.processDarkHeartSpread(state.board, darkDamaged, rng)?.let { events += it }
+            state.status = GameStatus.READY_FOR_INPUT
+            if (!boardReshuffler.hasValidMoves(state.board) && boardReshuffler.reshuffle(state.board, allowedColors, rng)) events += EngineEvent.BoardReshuffled()
+        }
+        val (_, two, three) = state.starThresholds
+        state.earnedStars = when {
+            state.score >= three -> 3
+            state.score >= two -> 2
+            state.isWon || state.score >= state.starThresholds.first -> 1
             else -> 0
         }
-    }
-
-    private fun updateHeartCollectionObjectives(gameState: GameState, color: HeartColor, count: Int) {
-        for (obj in gameState.objectives) {
-            if ((obj.config.type == ObjectiveType.COLLECT_COLOR || obj.config.type == ObjectiveType.COLLECT_HEARTS) &&
-                (obj.config.targetColor == null || obj.config.targetColor == color)
-            ) {
-                obj.currentCount += count
-            }
+        events += EngineEvent.ScoreChanged(state.score, state.score - startingScore, state.comboCount)
+        state.objectives.forEach { events += EngineEvent.ObjectiveUpdated(it) }
+        when (state.status) {
+            GameStatus.OBJECTIVE_COMPLETED -> events += EngineEvent.GameWon(state.score, state.earnedStars)
+            GameStatus.GAME_OVER -> events += EngineEvent.GameOver(if (state.movesRemaining <= 0) "OUT_OF_MOVES" else "OUT_OF_TIME")
+            else -> Unit
         }
     }
 
-    private fun updateSpecialCreationObjectives(gameState: GameState, specialType: SpecialHeartType) {
-        for (obj in gameState.objectives) {
-            if ((obj.config.type == ObjectiveType.COLLECT_SPECIAL || obj.config.type == ObjectiveType.CREATE_SPECIALS) &&
-                (obj.config.targetSpecial == null || obj.config.targetSpecial == specialType)
-            ) {
-                obj.currentCount++
-            }
-        }
-    }
-
-    private fun updateBlockerObjectives(gameState: GameState, blockerType: BlockerType) {
-        for (obj in gameState.objectives) {
-            if ((obj.config.type == ObjectiveType.DESTROY_BLOCKERS || obj.config.type == ObjectiveType.CLEAR_BLOCKER) &&
-                (obj.config.targetBlocker == null || obj.config.targetBlocker == blockerType)
-            ) {
-                obj.currentCount++
-            }
-            if (obj.config.type == ObjectiveType.CLEAR_DARK_HEARTS && blockerType == BlockerType.DARK_HEART) {
-                obj.currentCount++
-            }
-        }
-    }
-
-    private fun updateBrokenHeartRepairedObjectives(gameState: GameState, count: Int) {
-        for (obj in gameState.objectives) {
-            if (obj.config.type == ObjectiveType.REPAIR_BROKEN) {
-                obj.currentCount += count
-            }
-        }
-    }
-
-    private fun updateSpecificCellObjectives(gameState: GameState, affectedCoords: Set<Coord>) {
-        for (obj in gameState.objectives) {
-            if (obj.config.type == ObjectiveType.CLEAR_SPECIFIC_CELLS) {
-                val matched = affectedCoords.intersect(obj.config.targetCells)
-                if (matched.isNotEmpty()) {
-                    obj.clearedCells.addAll(matched)
-                    obj.currentCount = obj.clearedCells.size
-                }
-            }
-        }
-    }
-
-    private fun updateClearBoardObjectives(gameState: GameState, clearedCount: Int) {
-        for (obj in gameState.objectives) {
-            if (obj.config.type == ObjectiveType.CLEAR_BOARD) {
-                obj.currentCount += clearedCount
-            }
-        }
-    }
-
-    private fun updateScoreObjectives(gameState: GameState) {
-        for (obj in gameState.objectives) {
-            if (obj.config.type == ObjectiveType.SCORE || obj.config.type == ObjectiveType.REACH_SCORE) {
-                obj.currentCount = gameState.score
-            }
-        }
-    }
-
-    private fun updateGiftObjectives(gameState: GameState, count: Int) {
-        if (count <= 0) return
-        for (obj in gameState.objectives) {
-            if (obj.config.type == ObjectiveType.COLLECT_GIFT ||
-                ((obj.config.type == ObjectiveType.COLLECT_SPECIAL || obj.config.type == ObjectiveType.COLLECT_HEARTS) &&
-                        obj.config.targetSpecial == SpecialHeartType.GIFT_HEART)
-            ) {
-                obj.currentCount += count
-            }
-        }
-    }
+    private fun advance(objective: Objective, count: Int) { objective.currentCount = (objective.currentCount + count).coerceAtMost(objective.config.targetCount) }
 }

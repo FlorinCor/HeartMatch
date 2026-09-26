@@ -1,0 +1,36 @@
+{
+  "id": 166,
+  "name": "Ember Heartlands: Coral Switchback",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "I(PURPLE)", "O", "O", "I(PURPLE)", "O", "O", "O"],
+      ["O", "O", "O", "I(PURPLE)", "O", "O", "I(PURPLE)", "O", "O"],
+      ["O", "O", "I(PURPLE)", "O", "O", "B", "O", "O", "O"],
+      ["O", "O", "O", "B", "O", "O", "B", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 23,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [40000, 62500, 91000],
+  "randomSeed": 166,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 5
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "BARBED",
+      "amount": 3
+    }
+  ]
+}

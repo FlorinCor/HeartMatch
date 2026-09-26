@@ -1,0 +1,34 @@
+{
+  "id": 142,
+  "name": "Moonlit Reef: Pearl Caverns",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "D", "O", "O", "O", "D", "O", "O"],
+      ["O", "O", "O", "D", "O", "D", "O", "O", "O"],
+      ["O", "O", "BR(PINK)", "O", "O", "O", "BR(PINK)", "O", "O"],
+      ["O", "O", "O", "BR(PINK)", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 24,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [35300, 56300, 83300],
+  "randomSeed": 142,
+  "objectives": [
+    {
+      "type": "CLEAR_DARK",
+      "amount": 4
+    },
+    {
+      "type": "REPAIR",
+      "amount": 3
+    }
+  ]
+}

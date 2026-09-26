@@ -12,14 +12,16 @@ data class LevelRecord(
 
 data class PlayerProfile(
     val coins: Int = 500,
+    val gardenDecoration: String = "CLASSIC",
+    val ownedDecorations: Set<String> = emptySet(),
     val highestUnlockedLevel: Int = 1,
     val hammerCount: Int = 3,
     val bombBoosterCount: Int = 3,
     val rainbowBoosterCount: Int = 2,
     val shuffleCount: Int = 3,
     val extraMovesCount: Int = 3,
+    val reducedMotion: Boolean = false,
     val sfxEnabled: Boolean = true,
-    val musicEnabled: Boolean = true,
     val hapticsEnabled: Boolean = true,
     val dailyRewardStreak: Int = 0,
     val lastDailyClaimDay: Long = 0L,
@@ -33,14 +35,16 @@ class PlayerRepository(context: Context) {
     fun getProfile(): PlayerProfile {
         return PlayerProfile(
             coins = prefs.getInt("coins", 500),
+            gardenDecoration = prefs.getString("gardenDecoration", "CLASSIC") ?: "CLASSIC",
+            ownedDecorations = prefs.getStringSet("ownedDecorations", emptySet())!!.toSet(),
             highestUnlockedLevel = prefs.getInt("highestUnlockedLevel", 1),
             hammerCount = prefs.getInt("hammerCount", 3),
             bombBoosterCount = prefs.getInt("bombBoosterCount", 3),
             rainbowBoosterCount = prefs.getInt("rainbowBoosterCount", 2),
             shuffleCount = prefs.getInt("shuffleCount", 3),
             extraMovesCount = prefs.getInt("extraMovesCount", 3),
+            reducedMotion = prefs.getBoolean("reducedMotion", false),
             sfxEnabled = prefs.getBoolean("sfxEnabled", true),
-            musicEnabled = prefs.getBoolean("musicEnabled", true),
             hapticsEnabled = prefs.getBoolean("hapticsEnabled", true),
             dailyRewardStreak = prefs.getInt("dailyRewardStreak", 0),
             lastDailyClaimDay = prefs.getLong("lastDailyClaimDay", 0L),
@@ -52,14 +56,16 @@ class PlayerRepository(context: Context) {
     fun saveProfile(profile: PlayerProfile) {
         prefs.edit()
             .putInt("coins", profile.coins)
+            .putString("gardenDecoration", profile.gardenDecoration)
+            .putStringSet("ownedDecorations", profile.ownedDecorations)
             .putInt("highestUnlockedLevel", profile.highestUnlockedLevel)
             .putInt("hammerCount", profile.hammerCount)
             .putInt("bombBoosterCount", profile.bombBoosterCount)
             .putInt("rainbowBoosterCount", profile.rainbowBoosterCount)
             .putInt("shuffleCount", profile.shuffleCount)
             .putInt("extraMovesCount", profile.extraMovesCount)
+            .putBoolean("reducedMotion", profile.reducedMotion)
             .putBoolean("sfxEnabled", profile.sfxEnabled)
-            .putBoolean("musicEnabled", profile.musicEnabled)
             .putBoolean("hapticsEnabled", profile.hapticsEnabled)
             .putInt("dailyRewardStreak", profile.dailyRewardStreak)
             .putLong("lastDailyClaimDay", profile.lastDailyClaimDay)
@@ -85,7 +91,7 @@ class PlayerRepository(context: Context) {
         editor.putBoolean("level_${levelId}_completed", true)
 
         val currentUnlocked = prefs.getInt("highestUnlockedLevel", 1)
-        if (levelId >= currentUnlocked && levelId < 100) {
+        if (levelId >= currentUnlocked && levelId < 200) {
             editor.putInt("highestUnlockedLevel", levelId + 1)
         }
 
@@ -128,12 +134,17 @@ class PlayerRepository(context: Context) {
         saveProfile(updated)
     }
 
-    fun claimDailyReward(day: Int, rewardCoins: Int, boosterType: String? = null) {
+    fun claimDailyReward(day: Int, rewardCoins: Int, boosterType: String? = null): Boolean {
         val profile = getProfile()
+        val today = System.currentTimeMillis() / MILLIS_PER_DAY
+        if (profile.lastDailyClaimDay == today) return false
+        val expectedDay = RewardRules.nextClaim(profile.dailyRewardStreak)
+        val reward = DAILY_REWARDS[day] ?: return false
+        if (day != expectedDay || reward.first != rewardCoins || reward.second != boosterType) return false
         var updated = profile.copy(
             coins = profile.coins + rewardCoins,
             dailyRewardStreak = day,
-            lastDailyClaimDay = System.currentTimeMillis() / (1000 * 60 * 60 * 24)
+            lastDailyClaimDay = today
         )
         if (boosterType != null) {
             updated = when (boosterType) {
@@ -145,7 +156,48 @@ class PlayerRepository(context: Context) {
                 else -> updated
             }
         }
+        if (day == 7) updated = updated.copy(hammerCount = updated.hammerCount + 1,
+            bombBoosterCount = updated.bombBoosterCount + 1, shuffleCount = updated.shuffleCount + 1,
+            extraMovesCount = updated.extraMovesCount + 1)
         saveProfile(updated)
+        return true
+    }
+
+    @Synchronized
+    fun completeLevel(level: Int, stars: Int, score: Int): Pair<Int, Boolean> {
+        val record = getLevelRecord(level)
+        val coins = RewardRules.completionCoins(record.isCompleted, record.stars, stars)
+        val milestone = RewardRules.milestone(level, record.isCompleted)
+        val profile = getProfile()
+        prefs.edit().putInt("level_${level}_stars", maxOf(record.stars, stars.coerceIn(1, 3)))
+            .putInt("level_${level}_score", maxOf(record.highScore, score))
+            .putBoolean("level_${level}_completed", true)
+            .putInt("highestUnlockedLevel", maxOf(profile.highestUnlockedLevel, (level + 1).coerceAtMost(200)))
+            .putInt("coins", profile.coins + coins)
+            .putInt("hammerCount", profile.hammerCount + if (milestone) 1 else 0)
+            .putInt("shuffleCount", profile.shuffleCount + if (milestone) 1 else 0)
+            .apply()
+        return coins to milestone
+    }
+
+    @Synchronized
+    fun purchase(item: String): Boolean {
+        val profile = getProfile()
+        val decoration = item.endsWith("_GARDEN")
+        if (item == "CLASSIC" || item in profile.ownedDecorations) {
+            saveProfile(profile.copy(gardenDecoration = item)); return true
+        }
+        val cost = RewardRules.prices[item] ?: return false
+        if (profile.coins < cost) return false
+        saveProfile(profile.copy(coins = profile.coins - cost,
+            gardenDecoration = if (decoration) item else profile.gardenDecoration,
+            ownedDecorations = if (decoration) profile.ownedDecorations + item else profile.ownedDecorations,
+            hammerCount = profile.hammerCount + if(item == "HAMMER") 1 else 0,
+            bombBoosterCount = profile.bombBoosterCount + if(item == "BOMB") 1 else 0,
+            rainbowBoosterCount = profile.rainbowBoosterCount + if(item == "RAINBOW") 1 else 0,
+            shuffleCount = profile.shuffleCount + if(item == "SHUFFLE") 1 else 0,
+            extraMovesCount = profile.extraMovesCount + if(item == "EXTRA_MOVES") 1 else 0))
+        return true
     }
 
     fun resetAllData() {
@@ -154,9 +206,22 @@ class PlayerRepository(context: Context) {
 
     private fun calculateTotalStars(): Int {
         var total = 0
-        for (i in 1..100) {
+        for (i in 1..200) {
             total += prefs.getInt("level_${i}_stars", 0)
         }
         return total
+    }
+
+    private companion object {
+        const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
+        val DAILY_REWARDS = mapOf(
+            1 to (100 to null),
+            2 to (150 to "HAMMER"),
+            3 to (200 to "SHUFFLE"),
+            4 to (250 to "BOMB"),
+            5 to (300 to "EXTRA_MOVES"),
+            6 to (400 to "RAINBOW"),
+            7 to (1000 to "RAINBOW")
+        )
     }
 }

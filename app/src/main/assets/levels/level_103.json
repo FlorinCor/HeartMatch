@@ -1,0 +1,35 @@
+{
+  "id": 103,
+  "name": "Crystal Cove: Glass Garden",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "BR(PINK)", "O", "O", "O", "BR(PINK)", "O", "O"],
+      ["O", "O", "O", "BR(PINK)", "O", "BR(PINK)", "O", "O", "O"],
+      ["O", "O", "BR(PINK)", "O", "O", "O", "W2", "O", "O"],
+      ["O", "O", "O", "W2", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 26,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [28600, 46600, 70600],
+  "randomSeed": 103,
+  "objectives": [
+    {
+      "type": "REPAIR",
+      "amount": 5
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 2
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": 196,
+  "name": "Everheart Citadel: Moonstone Shelf",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "C(BLUE)", "O", "O", "C(BLUE)", "O", "O", "O"],
+      ["O", "O", "O", "C(BLUE)", "O", "O", "S2", "O", "O"],
+      ["O", "O", "S2", "O", "O", "S2", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 22,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [46500, 70500, 100500],
+  "randomSeed": 196,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "CHAINED",
+      "amount": 3
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "GREEN",
+      "amount": 22
+    }
+  ]
+}

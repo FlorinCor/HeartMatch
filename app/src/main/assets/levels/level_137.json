@@ -1,0 +1,35 @@
+{
+  "id": 137,
+  "name": "Thornwood Reach: Starfish Promenade",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "O", "O", "O", "B", "O", "O"],
+      ["O", "O", "O", "B", "O", "B", "O", "O", "O"],
+      ["O", "O", "BR(GREEN)", "O", "O", "O", "BR(GREEN)", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 25,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [36300, 55800, 81300],
+  "randomSeed": 137,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "BARBED",
+      "amount": 4
+    },
+    {
+      "type": "REPAIR",
+      "amount": 2
+    }
+  ]
+}

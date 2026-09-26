@@ -16,6 +16,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
@@ -27,7 +28,10 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import com.example.heartmatch.engine.model.BlockerType
 import com.example.heartmatch.engine.model.FireDirection
 import com.example.heartmatch.engine.model.HeartColor
@@ -36,6 +40,7 @@ import com.example.heartmatch.engine.model.Tile
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -182,7 +187,8 @@ fun TileView(
     tile: Tile?,
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
-    isHinted: Boolean = false
+    isHinted: Boolean = false,
+    isHealed: Boolean = false
 ) {
     if (tile == null) return
 
@@ -206,6 +212,26 @@ fun TileView(
         label = "ShimmerRotation"
     )
 
+    val healingPulse by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(420, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "HealingPulse"
+    )
+
+    val woodenHeartImage = if (tile is Tile.Blocker && tile.blockerType == BlockerType.WOODEN_HEART) {
+        ImageBitmap.imageResource(com.example.heartmatch.R.drawable.wooden_heart_oak)
+    } else {
+        null
+    }
+    val stoneHeartImage = if (tile is Tile.Blocker && tile.blockerType == BlockerType.STONE_HEART) {
+        ImageBitmap.imageResource(com.example.heartmatch.R.drawable.stone_heart_granite)
+    } else {
+        null
+    }
     Canvas(
         modifier = modifier
             .fillMaxSize()
@@ -248,12 +274,40 @@ fun TileView(
                     drawGlossySpecialHeart(tile, w, h, shimmerRotation)
                 }
                 is Tile.Blocker -> {
-                    drawGlossyBlockerHeart(tile, w, h, shimmerRotation)
+                    drawGlossyBlockerHeart(tile, w, h, shimmerRotation, woodenHeartImage, stoneHeartImage)
                 }
             }
 
             if (isSelected) {
                 drawPath(createHeartPath(w, h), color = Color.White.copy(alpha = 0.18f))
+            }
+
+            if (tile is Tile.Blocker) {
+                val count = tile.durability.coerceAtMost(6)
+                repeat(count) { index ->
+                    val center = Offset(w * 0.5f + (index - (count - 1) / 2f) * w * 0.12f, h * 0.86f)
+                    drawCircle(Color(0xFF152F29), w * 0.052f, center)
+                    drawCircle(Color.White, w * 0.029f, center)
+                }
+            }
+            if (isHealed) {
+                val glowAlpha = 0.52f + (1f - healingPulse) * 0.30f
+                drawPath(
+                    path = createHeartPath(w, h, paddingRatio = 0.045f),
+                    color = Color(0xFFB9FFD1).copy(alpha = glowAlpha),
+                    style = Stroke(width = w * (0.025f + healingPulse * 0.035f), join = StrokeJoin.Round)
+                )
+                val sparkleAlpha = 0.45f + (1f - healingPulse) * 0.5f
+                listOf(
+                    Offset(w * 0.20f, h * 0.37f),
+                    Offset(w * 0.80f, h * 0.38f),
+                    Offset(w * 0.51f, h * 0.81f)
+                ).forEach { center ->
+                    drawPath(
+                        path = createStarPath(center, w * 0.045f, w * 0.016f, numPoints = 4),
+                        color = Color(0xFFE5FFE9).copy(alpha = sparkleAlpha)
+                    )
+                }
             }
         }
     }
@@ -388,7 +442,53 @@ fun DrawScope.drawGlossySpecialHeart(
         SpecialHeartType.GIFT_HEART -> drawGiftHeart(heartPath, w, h)
         SpecialHeartType.ROYAL_HEART -> drawRoyalHeart(heartPath, w, h)
         SpecialHeartType.ANGEL_HEART -> drawAngelHeart(w, h)
+        SpecialHeartType.LIGHT_HEART -> drawLightHeart(heartPath, w, h, shimmerRotation)
     }
+}
+
+private fun DrawScope.drawLightHeart(heartPath: Path, w: Float, h: Float, shimmerRotation: Float) {
+    // Radiating light rays behind the heart
+    val center = Offset(w * 0.5f, h * 0.52f)
+    rotate(shimmerRotation, pivot = center) {
+        for (i in 0 until 12) {
+            val angle = Math.toRadians((i * 30).toDouble())
+            val len = if (i % 2 == 0) w * 0.55f else w * 0.42f
+            val end = Offset(
+                center.x + (Math.cos(angle) * len).toFloat(),
+                center.y + (Math.sin(angle) * len).toFloat()
+            )
+            drawLine(
+                color = Color(0xFFFFF3B0).copy(alpha = 0.55f),
+                start = center,
+                end = end,
+                strokeWidth = w * 0.03f
+            )
+        }
+    }
+
+    drawHeartShadow(heartPath, h)
+    drawHeartBody(
+        heartPath, w, h,
+        light = Color(0xFFFFFDF2),
+        main = HeartColors.GoldLight,
+        dark = HeartColors.GoldMain,
+        outline = HeartColors.GoldDark
+    )
+    // Radial glow overlay
+    drawPath(
+        heartPath,
+        brush = Brush.radialGradient(
+            colors = listOf(Color.White.copy(alpha = 0.85f), Color.White.copy(alpha = 0f)),
+            center = center,
+            radius = w * 0.45f
+        )
+    )
+    drawHeartGloss(heartPath, w, h)
+
+    // Central sparkle
+    drawCircle(Color.White, radius = w * 0.06f, center = center)
+    drawLine(Color.White.copy(alpha = 0.9f), Offset(center.x, center.y - h * 0.18f), Offset(center.x, center.y + h * 0.18f), strokeWidth = w * 0.02f)
+    drawLine(Color.White.copy(alpha = 0.9f), Offset(center.x - w * 0.18f, center.y), Offset(center.x + w * 0.18f, center.y), strokeWidth = w * 0.02f)
 }
 
 private fun DrawScope.drawRainbowHeart(heartPath: Path, w: Float, h: Float, shimmerRotation: Float) {
@@ -729,15 +829,17 @@ fun DrawScope.drawGlossyBlockerHeart(
     tile: Tile.Blocker,
     w: Float,
     h: Float,
-    shimmerRotation: Float
+    shimmerRotation: Float,
+    woodenHeartImage: ImageBitmap? = null,
+    stoneHeartImage: ImageBitmap? = null,
 ) {
     val heartPath = createHeartPath(w, h, 0.08f)
     val damaged = tile.durability < tile.maxDurability
 
     when (tile.blockerType) {
-        BlockerType.STONE_HEART -> drawStoneHeart(heartPath, w, h, damaged)
+        BlockerType.STONE_HEART -> drawStoneHeart(heartPath, w, h, damaged, stoneHeartImage)
         BlockerType.ICE_HEART -> drawIceHeart(tile, heartPath, w, h, damaged)
-        BlockerType.WOODEN_HEART -> drawWoodenHeart(heartPath, w, h, damaged)
+        BlockerType.WOODEN_HEART -> drawWoodenHeart(heartPath, w, h, damaged, woodenHeartImage)
         BlockerType.BARBED_HEART -> drawBarbedHeart(tile, heartPath, w, h)
         BlockerType.BROKEN_HEART -> drawBrokenHeart(tile, heartPath, w, h)
         BlockerType.STITCHED_HEART -> drawStitchedHeart(tile, heartPath, w, h)
@@ -746,31 +848,28 @@ fun DrawScope.drawGlossyBlockerHeart(
     }
 }
 
-private fun DrawScope.drawStoneHeart(heartPath: Path, w: Float, h: Float, damaged: Boolean) {
+private fun DrawScope.drawStoneHeart(heartPath: Path, w: Float, h: Float, damaged: Boolean, stoneHeartImage: ImageBitmap?) {
     drawHeartShadow(heartPath, h)
-    drawHeartBody(
-        heartPath, w, h,
-        light = Color(0xFFC9C9CF),
-        main = Color(0xFF80808A),
-        dark = Color(0xFF3F3F48),
-        outline = Color(0xFF23232B)
-    )
+    if (stoneHeartImage != null) {
+        drawHeartSprite(stoneHeartImage, w, h)
+    } else {
+        drawHeartBody(
+            heartPath, w, h,
+            light = Color(0xFFE0E0E3),
+            main = Color(0xFF999AA2),
+            dark = Color(0xFF555761),
+            outline = Color(0xFF30313A)
+        )
+    }
 
+    // Lift the granite mids slightly while keeping its natural texture and dark edge.
     clipPath(heartPath) {
-        // Rocky facets
-        val facetLight = Color.White.copy(alpha = 0.14f)
-        val facetDark = Color.Black.copy(alpha = 0.18f)
-        drawPath(Path().apply {
-            moveTo(w * 0.18f, h * 0.30f); lineTo(w * 0.40f, h * 0.24f); lineTo(w * 0.36f, h * 0.48f); lineTo(w * 0.14f, h * 0.46f); close()
-        }, facetLight)
-        drawPath(Path().apply {
-            moveTo(w * 0.56f, h * 0.20f); lineTo(w * 0.82f, h * 0.30f); lineTo(w * 0.70f, h * 0.50f); lineTo(w * 0.52f, h * 0.42f); close()
-        }, facetDark)
-        drawPath(Path().apply {
-            moveTo(w * 0.36f, h * 0.55f); lineTo(w * 0.66f, h * 0.58f); lineTo(w * 0.50f, h * 0.86f); close()
-        }, facetLight)
+        drawRect(color = Color(0xFFDDE2EA).copy(alpha = 0.16f), size = Size(w, h))
+    }
 
-        // Crack lines
+    if (damaged) clipPath(heartPath) {
+        // A pale chipped edge around the dark fissure makes the first hit visible
+        // against both the pale facets and the darker granite texture.
         val crack = Path().apply {
             moveTo(w * 0.30f, h * 0.22f)
             lineTo(w * 0.44f, h * 0.40f)
@@ -780,16 +879,41 @@ private fun DrawScope.drawStoneHeart(heartPath: Path, w: Float, h: Float, damage
             lineTo(w * 0.66f, h * 0.34f)
             lineTo(w * 0.76f, h * 0.44f)
         }
-        drawPath(crack, color = Color(0xFF23232B), style = Stroke(width = w * 0.022f, cap = StrokeCap.Round, join = StrokeJoin.Round))
-        if (damaged) {
-            val extra = Path().apply {
-                moveTo(w * 0.52f, h * 0.72f); lineTo(w * 0.60f, h * 0.62f); lineTo(w * 0.72f, h * 0.66f)
-                moveTo(w * 0.40f, h * 0.55f); lineTo(w * 0.24f, h * 0.60f)
-            }
-            drawPath(extra, color = Color(0xFF15151B), style = Stroke(width = w * 0.03f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(crack, color = Color(0xFFE2E5EA).copy(alpha = 0.9f), style = Stroke(width = w * 0.047f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(crack, color = Color(0xFF17191F), style = Stroke(width = w * 0.024f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        val extra = Path().apply {
+            moveTo(w * 0.52f, h * 0.72f); lineTo(w * 0.60f, h * 0.62f); lineTo(w * 0.72f, h * 0.66f)
+            moveTo(w * 0.40f, h * 0.55f); lineTo(w * 0.24f, h * 0.60f)
         }
+        drawPath(extra, color = Color(0xFFC6CBD2).copy(alpha = 0.86f), style = Stroke(width = w * 0.039f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(extra, color = Color(0xFF1C1E25), style = Stroke(width = w * 0.019f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        // A broken notch on the right edge makes damage easy to distinguish.
+        val chip = Path().apply {
+            moveTo(w * 0.86f, h * 0.39f)
+            lineTo(w * 0.98f, h * 0.36f)
+            lineTo(w * 0.94f, h * 0.48f)
+            lineTo(w * 0.99f, h * 0.55f)
+            lineTo(w * 0.84f, h * 0.52f)
+            close()
+        }
+        drawPath(chip, color = Color(0xFF303039))
+        drawPath(chip, color = Color(0xFFD7D7DE).copy(alpha = 0.75f), style = Stroke(width = w * 0.018f, join = StrokeJoin.Round))
+        drawLine(Color(0xFFB8B8C1), Offset(w * 0.86f, h * 0.40f), Offset(w * 0.93f, h * 0.47f), strokeWidth = w * 0.018f)
     }
-    drawHeartGloss(heartPath, w, h, intensity = 0.45f)
+}
+
+private fun DrawScope.drawHeartSprite(image: ImageBitmap, w: Float, h: Float) {
+    val aspectRatio = image.width.toFloat() / image.height
+    val maxWidth = w * 0.92f
+    val maxHeight = h * 0.92f
+    val imageWidth = min(maxWidth, maxHeight * aspectRatio)
+    val imageHeight = imageWidth / aspectRatio
+    drawImage(
+        image = image,
+        dstOffset = IntOffset(((w - imageWidth) / 2f).roundToInt(), ((h - imageHeight) / 2f).roundToInt()),
+        dstSize = IntSize(imageWidth.roundToInt(), imageHeight.roundToInt())
+    )
 }
 
 private fun DrawScope.drawIceHeart(tile: Tile.Blocker, heartPath: Path, w: Float, h: Float, damaged: Boolean) {
@@ -801,7 +925,7 @@ private fun DrawScope.drawIceHeart(tile: Tile.Blocker, heartPath: Path, w: Float
     }
 
     // Frosted crystal shell
-    val shellAlpha = if (payloadColor != null) 0.86f else 1f
+    val shellAlpha = if (payloadColor != null) 0.35f else 1f
     drawPath(
         heartPath,
         brush = Brush.radialGradient(
@@ -814,27 +938,36 @@ private fun DrawScope.drawIceHeart(tile: Tile.Blocker, heartPath: Path, w: Float
     )
 
     clipPath(heartPath) {
-        // Faceted crystal geometry
+        // Uneven crystal facets keep the ice from looking like a perfectly mirrored shell.
         val facets = Path().apply {
-            moveTo(w * 0.5f, h * 0.30f); lineTo(w * 0.18f, h * 0.14f)
-            moveTo(w * 0.5f, h * 0.30f); lineTo(w * 0.82f, h * 0.14f)
-            moveTo(w * 0.5f, h * 0.30f); lineTo(w * 0.5f, h * 0.96f)
-            moveTo(w * 0.5f, h * 0.30f); lineTo(w * 0.08f, h * 0.44f)
-            moveTo(w * 0.5f, h * 0.30f); lineTo(w * 0.92f, h * 0.44f)
-            moveTo(w * 0.22f, h * 0.50f); lineTo(w * 0.5f, h * 0.60f); lineTo(w * 0.78f, h * 0.50f)
+            moveTo(w * 0.46f, h * 0.32f); lineTo(w * 0.20f, h * 0.13f)
+            moveTo(w * 0.46f, h * 0.32f); lineTo(w * 0.78f, h * 0.16f)
+            moveTo(w * 0.46f, h * 0.32f); lineTo(w * 0.54f, h * 0.94f)
+            moveTo(w * 0.46f, h * 0.32f); lineTo(w * 0.09f, h * 0.47f)
+            moveTo(w * 0.46f, h * 0.32f); lineTo(w * 0.91f, h * 0.42f)
+            moveTo(w * 0.19f, h * 0.49f); lineTo(w * 0.47f, h * 0.57f); lineTo(w * 0.79f, h * 0.53f)
         }
         drawPath(facets, color = Color.White.copy(alpha = 0.85f), style = Stroke(width = w * 0.02f, cap = StrokeCap.Round))
         drawPath(Path().apply {
-            moveTo(w * 0.5f, h * 0.30f); lineTo(w * 0.22f, h * 0.50f); lineTo(w * 0.5f, h * 0.60f); close()
+            moveTo(w * 0.46f, h * 0.32f); lineTo(w * 0.19f, h * 0.49f); lineTo(w * 0.47f, h * 0.57f); close()
         }, color = Color.White.copy(alpha = 0.30f))
         drawPath(Path().apply {
-            moveTo(w * 0.5f, h * 0.60f); lineTo(w * 0.78f, h * 0.50f); lineTo(w * 0.5f, h * 0.96f); close()
+            moveTo(w * 0.47f, h * 0.57f); lineTo(w * 0.79f, h * 0.53f); lineTo(w * 0.54f, h * 0.94f); close()
         }, color = Color(0xFF1565C0).copy(alpha = 0.22f))
 
         if (damaged) {
             val fracture = Path().apply {
-                moveTo(w * 0.30f, h * 0.36f); lineTo(w * 0.44f, h * 0.52f); lineTo(w * 0.38f, h * 0.70f); lineTo(w * 0.50f, h * 0.84f)
-                moveTo(w * 0.44f, h * 0.52f); lineTo(w * 0.70f, h * 0.40f)
+                moveTo(w * 0.31f, h * 0.35f)
+                lineTo(w * 0.39f, h * 0.45f)
+                lineTo(w * 0.35f, h * 0.55f)
+                lineTo(w * 0.48f, h * 0.63f)
+                lineTo(w * 0.43f, h * 0.75f)
+                lineTo(w * 0.57f, h * 0.89f)
+                moveTo(w * 0.39f, h * 0.45f)
+                lineTo(w * 0.55f, h * 0.43f)
+                lineTo(w * 0.68f, h * 0.34f)
+                moveTo(w * 0.48f, h * 0.63f)
+                lineTo(w * 0.62f, h * 0.59f)
             }
             drawPath(fracture, color = Color(0xFF0D47A1).copy(alpha = 0.7f), style = Stroke(width = w * 0.025f, cap = StrokeCap.Round, join = StrokeJoin.Round))
         }
@@ -844,47 +977,64 @@ private fun DrawScope.drawIceHeart(tile: Tile.Blocker, heartPath: Path, w: Float
     drawHeartGloss(heartPath, w, h)
 }
 
-private fun DrawScope.drawWoodenHeart(heartPath: Path, w: Float, h: Float, damaged: Boolean) {
+private fun DrawScope.drawWoodenHeart(
+    heartPath: Path,
+    w: Float,
+    h: Float,
+    damaged: Boolean,
+    woodenHeartImage: ImageBitmap?
+) {
     drawHeartShadow(heartPath, h)
-    drawHeartBody(
-        heartPath, w, h,
-        light = Color(0xFFDDA35F),
-        main = Color(0xFFA0642F),
-        dark = Color(0xFF55300F),
-        outline = Color(0xFF3A1E06)
-    )
+    if (woodenHeartImage != null) {
+        drawHeartSprite(woodenHeartImage, w, h)
+    } else {
+        drawHeartBody(
+            heartPath, w, h,
+            light = Color(0xFFDDA35F),
+            main = Color(0xFFA0642F),
+            dark = Color(0xFF55300F),
+            outline = Color(0xFF3A1E06)
+        )
+    }
 
-    clipPath(heartPath) {
-        // Vertical wood grain
-        val grain = Color(0xFF4A2A0C).copy(alpha = 0.45f)
-        for (i in 0..6) {
-            val x = w * (0.14f + i * 0.12f)
-            val wave = Path().apply {
-                moveTo(x, 0f)
-                cubicTo(x + w * 0.03f, h * 0.3f, x - w * 0.03f, h * 0.6f, x + w * 0.02f, h)
+    if (damaged) {
+        clipPath(heartPath) {
+            // Split wood fibers only appear after the blocker takes damage.
+            val crack = Path().apply {
+                moveTo(w * 0.56f, h * 0.28f)
+                lineTo(w * 0.47f, h * 0.40f)
+                lineTo(w * 0.55f, h * 0.52f)
+                lineTo(w * 0.42f, h * 0.66f)
+                lineTo(w * 0.50f, h * 0.79f)
+                lineTo(w * 0.46f, h * 0.96f)
+                moveTo(w * 0.47f, h * 0.40f)
+                lineTo(w * 0.68f, h * 0.36f)
+                moveTo(w * 0.42f, h * 0.66f)
+                lineTo(w * 0.27f, h * 0.59f)
             }
-            drawPath(wave, color = grain, style = Stroke(width = w * (if (i % 2 == 0) 0.016f else 0.010f)))
-        }
-        // Central plank seam
-        drawLine(Color(0xFF3A1E06), Offset(w * 0.5f, h * 0.27f), Offset(w * 0.5f, h * 0.98f), strokeWidth = w * 0.02f)
+            drawPath(crack, color = Color(0xFF2A1404), style = Stroke(width = w * 0.035f, cap = StrokeCap.Round, join = StrokeJoin.Round))
 
-        // Jagged crack
-        val crack = Path().apply {
-            moveTo(w * 0.5f, h * 0.27f)
-            lineTo(w * 0.44f, h * 0.42f)
-            lineTo(w * 0.54f, h * 0.55f)
-            lineTo(w * 0.46f, h * 0.72f)
-            lineTo(w * 0.5f, h * 0.98f)
-        }
-        drawPath(crack, color = Color(0xFF2A1404), style = Stroke(width = w * (if (damaged) 0.05f else 0.03f), cap = StrokeCap.Round, join = StrokeJoin.Round))
-        if (damaged) {
-            drawPath(Path().apply {
-                moveTo(w * 0.54f, h * 0.55f); lineTo(w * 0.74f, h * 0.48f)
-                moveTo(w * 0.44f, h * 0.42f); lineTo(w * 0.24f, h * 0.36f)
-            }, color = Color(0xFF2A1404), style = Stroke(width = w * 0.03f, cap = StrokeCap.Round))
+            // A dark inset and pale cut face read as a missing splinter from the wood.
+            val chip = Path().apply {
+                moveTo(w * 0.86f, h * 0.39f)
+                lineTo(w * 0.99f, h * 0.35f)
+                lineTo(w * 0.95f, h * 0.47f)
+                lineTo(w * 0.99f, h * 0.54f)
+                lineTo(w * 0.84f, h * 0.51f)
+                close()
+            }
+            drawPath(chip, color = Color(0xFF321609))
+            drawPath(
+                Path().apply {
+                    moveTo(w * 0.87f, h * 0.40f)
+                    lineTo(w * 0.96f, h * 0.37f)
+                    lineTo(w * 0.91f, h * 0.45f)
+                    close()
+                },
+                color = Color(0xFFE7A75E)
+            )
         }
     }
-    drawHeartGloss(heartPath, w, h, intensity = 0.4f)
 }
 
 private fun DrawScope.drawBarbedHeart(tile: Tile.Blocker, heartPath: Path, w: Float, h: Float) {
@@ -894,36 +1044,106 @@ private fun DrawScope.drawBarbedHeart(tile: Tile.Blocker, heartPath: Path, w: Fl
     drawHeartBody(heartPath, w, h, light, main, dark)
     drawHeartGloss(heartPath, w, h)
 
-    drawBarbedWire(Offset(w * 0.08f, h * 0.30f), Offset(w * 0.92f, h * 0.62f), w)
-    drawBarbedWire(Offset(w * 0.10f, h * 0.60f), Offset(w * 0.90f, h * 0.28f), w)
-    drawBarbedWire(Offset(w * 0.30f, h * 0.10f), Offset(w * 0.56f, h * 0.94f), w)
+    // Keep both curved strands and every thorn inside the heart silhouette.
+    clipPath(heartPath) {
+        drawBarbedWire(
+            listOf(
+                WireCurve(Offset(-w * 0.04f, h * 0.31f), Offset(w * 0.18f, h * 0.36f), Offset(w * 0.41f, h * 0.46f), Offset(w * 0.50f, h * 0.50f)),
+                WireCurve(Offset(w * 0.50f, h * 0.50f), Offset(w * 0.59f, h * 0.54f), Offset(w * 0.82f, h * 0.68f), Offset(w * 1.04f, h * 0.77f))
+            ),
+            w,
+            twistCount = 9,
+            barbCount = 3
+        )
+        // Draw the second strand over the first at the center of the X.
+        drawBarbedWire(
+            listOf(
+                WireCurve(Offset(-w * 0.04f, h * 0.78f), Offset(w * 0.18f, h * 0.70f), Offset(w * 0.41f, h * 0.54f), Offset(w * 0.50f, h * 0.50f)),
+                WireCurve(Offset(w * 0.50f, h * 0.50f), Offset(w * 0.59f, h * 0.46f), Offset(w * 0.82f, h * 0.36f), Offset(w * 1.04f, h * 0.30f))
+            ),
+            w,
+            twistCount = 9,
+            barbCount = 3
+        )
+    }
 }
 
-private fun DrawScope.drawBarbedWire(start: Offset, end: Offset, w: Float) {
-    val dx = end.x - start.x
-    val dy = end.y - start.y
-    val len = sqrt(dx * dx + dy * dy)
-    val ux = dx / len
-    val uy = dy / len
-    val nx = -uy
-    val ny = ux
+private data class WireCurve(val start: Offset, val control1: Offset, val control2: Offset, val end: Offset)
 
-    drawLine(Color(0xFF3F3F47), start, end, strokeWidth = w * 0.055f, cap = StrokeCap.Round)
-    drawLine(Color(0xFFC9C9D1), start, end, strokeWidth = w * 0.026f, cap = StrokeCap.Round)
+private fun DrawScope.drawBarbedWire(curves: List<WireCurve>, w: Float, twistCount: Int = 20, barbCount: Int = 8) {
+    val wire = Path().apply {
+        moveTo(curves.first().start.x, curves.first().start.y)
+        curves.forEach { curve -> cubicTo(curve.control1.x, curve.control1.y, curve.control2.x, curve.control2.y, curve.end.x, curve.end.y) }
+    }
 
-    val barbs = 4
-    val s = w * 0.05f
-    for (i in 1..barbs) {
-        val t = i / (barbs + 1f)
-        val p = Offset(start.x + dx * t, start.y + dy * t)
-        val a1 = Offset(p.x - ux * s * 0.6f + nx * s, p.y - uy * s * 0.6f + ny * s)
-        val a2 = Offset(p.x + ux * s * 0.6f - nx * s, p.y + uy * s * 0.6f - ny * s)
-        val b1 = Offset(p.x + ux * s * 0.6f + nx * s, p.y + uy * s * 0.6f + ny * s)
-        val b2 = Offset(p.x - ux * s * 0.6f - nx * s, p.y - uy * s * 0.6f - ny * s)
-        drawLine(Color(0xFF3F3F47), a1, a2, strokeWidth = w * 0.03f, cap = StrokeCap.Round)
-        drawLine(Color(0xFF3F3F47), b1, b2, strokeWidth = w * 0.03f, cap = StrokeCap.Round)
-        drawLine(Color(0xFFE0E0E6), a1, a2, strokeWidth = w * 0.014f, cap = StrokeCap.Round)
-        drawLine(Color(0xFFE0E0E6), b1, b2, strokeWidth = w * 0.014f, cap = StrokeCap.Round)
+    // Dark twisted core, steel body, then a narrow cool highlight for rounded metal.
+    drawPath(wire, color = Color(0xFF262B32), style = Stroke(width = w * 0.047f, cap = StrokeCap.Round))
+    drawPath(wire, color = Color(0xFF68727E), style = Stroke(width = w * 0.033f, cap = StrokeCap.Round))
+    drawPath(wire, color = Color(0xFFD6DCE3), style = Stroke(width = w * 0.018f, cap = StrokeCap.Round))
+    drawPath(wire, color = Color.White.copy(alpha = 0.70f), style = Stroke(width = w * 0.006f, cap = StrokeCap.Round))
+
+    fun pointAt(t: Float): Offset {
+        val scaled = (t.coerceIn(0f, 1f) * curves.size).coerceAtMost(curves.size - 0.0001f)
+        val curve = curves[scaled.toInt()]
+        val localT = scaled - scaled.toInt()
+        val u = 1f - localT
+        return Offset(
+            u * u * u * curve.start.x + 3f * u * u * localT * curve.control1.x + 3f * u * localT * localT * curve.control2.x + localT * localT * localT * curve.end.x,
+            u * u * u * curve.start.y + 3f * u * u * localT * curve.control1.y + 3f * u * localT * localT * curve.control2.y + localT * localT * localT * curve.end.y
+        )
+    }
+
+    fun tangentAt(t: Float): Offset {
+        val scaled = (t.coerceIn(0f, 1f) * curves.size).coerceAtMost(curves.size - 0.0001f)
+        val curve = curves[scaled.toInt()]
+        val localT = scaled - scaled.toInt()
+        val u = 1f - localT
+        val dx = 3f * u * u * (curve.control1.x - curve.start.x) + 6f * u * localT * (curve.control2.x - curve.control1.x) + 3f * localT * localT * (curve.end.x - curve.control2.x)
+        val dy = 3f * u * u * (curve.control1.y - curve.start.y) + 6f * u * localT * (curve.control2.y - curve.control1.y) + 3f * localT * localT * (curve.end.y - curve.control2.y)
+        val length = sqrt(dx * dx + dy * dy).coerceAtLeast(1f)
+        return Offset(dx / length, dy / length)
+    }
+
+    // Short diagonal wraps suggest two strands twisted together.
+    for (i in 0 until twistCount) {
+        val t = 0.025f + i * (0.95f / twistCount)
+        val p = pointAt(t)
+        val tangent = tangentAt(t)
+        val normal = Offset(-tangent.y, tangent.x)
+        val direction = if (i % 2 == 0) 1f else -1f
+        val a = Offset(p.x - tangent.x * w * 0.017f - normal.x * w * 0.021f * direction, p.y - tangent.y * w * 0.017f - normal.y * w * 0.021f * direction)
+        val b = Offset(p.x + tangent.x * w * 0.017f + normal.x * w * 0.021f * direction, p.y + tangent.y * w * 0.017f + normal.y * w * 0.021f * direction)
+        drawLine(Color(0xFF454D57), a, b, strokeWidth = w * 0.008f, cap = StrokeCap.Round)
+        drawLine(Color(0xFFE7EBF0).copy(alpha = 0.85f), Offset(a.x - normal.x * w * 0.006f, a.y - normal.y * w * 0.006f), Offset(b.x - normal.x * w * 0.006f, b.y - normal.y * w * 0.006f), strokeWidth = w * 0.004f, cap = StrokeCap.Round)
+    }
+
+    // Each barb is a small metal thorn rooted into the cable. Alternating sides
+    // keeps the silhouette close to the reference without overcrowding the heart.
+    for (i in 1..barbCount) {
+        // Keep thorns away from the X intersection so the crossing stays clean.
+        val t = if (barbCount == 3) {
+            when (i) {
+                1 -> 0.22f
+                2 -> 0.39f
+                else -> 0.78f
+            }
+        } else {
+            i / (barbCount + 1f)
+        }
+        val p = pointAt(t)
+        val tangent = tangentAt(t)
+        val normal = Offset(-tangent.y, tangent.x)
+        val side = if (i % 2 == 0) 1f else -1f
+        val root = Offset(p.x + tangent.x * w * 0.014f, p.y + tangent.y * w * 0.014f)
+        val tip = Offset(p.x + normal.x * w * 0.072f * side, p.y + normal.y * w * 0.072f * side)
+        val barb = Path().apply {
+            moveTo(p.x - tangent.x * w * 0.020f, p.y - tangent.y * w * 0.020f)
+            lineTo(tip.x, tip.y)
+            lineTo(root.x, root.y)
+        }
+        drawPath(barb, color = Color(0xFF303740), style = Stroke(width = w * 0.024f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(barb, color = Color(0xFFD8DEE5), style = Stroke(width = w * 0.011f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawLine(Color.White.copy(alpha = 0.72f), Offset(tip.x - tangent.x * w * 0.01f, tip.y - tangent.y * w * 0.01f), root, strokeWidth = w * 0.004f, cap = StrokeCap.Round)
     }
 }
 
@@ -1004,8 +1224,8 @@ private fun DrawScope.drawBubbleHeart(tile: Tile.Blocker, w: Float, h: Float, sh
     val center = Offset(w / 2, h / 2)
     val radius = min(w, h) * 0.48f
 
-    // Trapped heart
-    scale(0.74f, pivot = center) {
+    // Keep a little breathing room inside the bubble; the released heart renders at full size.
+    scale(0.88f, pivot = center) {
         drawGlossyNormalHeart(payloadColor, w, h)
     }
 

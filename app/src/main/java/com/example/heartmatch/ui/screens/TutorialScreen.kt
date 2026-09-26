@@ -1,5 +1,6 @@
 package com.example.heartmatch.ui.screens
 
+import com.example.heartmatch.ui.theme.GardenPalette
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +20,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
+import com.example.heartmatch.ui.components.GardenBackdrop
+import com.example.heartmatch.ui.components.GardenIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -52,14 +55,15 @@ fun TutorialScreen(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF3F145B),
-                        Color(0xFF6A1B9A),
-                        Color(0xFF1A002C)
+                        GardenPalette.Panel,
+                        GardenPalette.PanelLight,
+                        GardenPalette.Background
                     )
                 )
             )
             .padding(16.dp)
     ) {
+        GardenBackdrop(dim = 0.72f)
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -76,19 +80,19 @@ fun TutorialScreen(
                     modifier = Modifier
                         .size(42.dp)
                         .shadow(6.dp, CircleShape)
-                        .background(Color(0xFF2E0854), CircleShape)
+                        .background(GardenPalette.Panel, CircleShape)
                         .border(1.5.dp, Color.White.copy(alpha = 0.8f), CircleShape)
                         .clickable { onBackClick() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "◀", color = Color.White, fontSize = 18.sp)
+                    GardenIcon("back")
                 }
 
                 Text(
                     text = "HOW TO PLAY",
                     color = Color.White,
                     fontSize = 24.sp,
-                    fontWeight = FontWeight.Black,
+                    fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 )
 
@@ -99,7 +103,7 @@ fun TutorialScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF2E0854), RoundedCornerShape(16.dp))
+                    .background(GardenPalette.Panel, RoundedCornerShape(16.dp))
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -109,7 +113,7 @@ fun TutorialScreen(
                         modifier = Modifier
                             .weight(1f)
                             .background(
-                                if (isSelected) Color(0xFFFF4081) else Color.Transparent,
+                                if (isSelected) GardenPalette.Rose else Color.Transparent,
                                 RoundedCornerShape(12.dp)
                             )
                             .clickable { selectedTab = index }
@@ -167,12 +171,14 @@ fun BasicsTab() {
 
     TutorialCard(
         title = "Level Objectives & Star Ratings",
-        desc = "Fulfill all level objectives before running out of moves to earn up to 3 stars and unlock the next romantic puzzle level."
+        desc = "Complete every objective to earn at least one star. Unused original moves add 100 points each before stars are awarded; extra moves cannot inflate this bonus. First clears and improved stars earn more coins than replays."
     )
 }
 
 @Composable
 fun SpecialsTab() {
+    TutorialCard(title = "Special combinations", desc = "Fire + Fire clears one row and column. Fire + Bomb clears three rows and columns. Bomb + Bomb clears a 5×5 area.")
+    TutorialCard(title = "Light and Angel", desc = "Light clears 3×3 and removes an extra blocker layer inside that area. Angel targets up to five blockers, prioritizing unfinished objectives and dark hearts. Tap specials to preview their current targets.")
     TutorialCard(
         title = "Fire Heart (Match 4)",
         desc = "Created by matching 4 hearts in a line. When matched or triggered, blasts a fiery laser clearing the entire row or column!"
@@ -202,7 +208,7 @@ fun SpecialsTab() {
 
     TutorialCard(
         title = "Gift Heart",
-        desc = "Special festive reward tile that gives bonus points and fulfills Gift Collection objectives."
+        desc = "Clears a cross plus two objective-priority targets. Tap to preview the exact targets before activating. Gives 1,000 bonus points."
     ) {
         Box(modifier = Modifier.size(48.dp)) {
             TileView(tile = Tile.Special(specialType = SpecialHeartType.GIFT_HEART))
@@ -232,7 +238,7 @@ fun BlockersTab() {
 
     TutorialCard(
         title = "Wooden Heart",
-        desc = "Multi-layer wooden crate. Each adjacent match removes one wooden layer until destroyed."
+        desc = "Layer dots show hits remaining. Wood loses two layers if a match touches it on two sides; stone loses one per wave."
     ) {
         Box(modifier = Modifier.size(44.dp)) {
             TileView(tile = Tile.Blocker(blockerType = BlockerType.WOODEN_HEART, durability = 2))
@@ -241,7 +247,7 @@ fun BlockersTab() {
 
     TutorialCard(
         title = "Chained Heart & Broken Heart",
-        desc = "Chained hearts cannot move until unlocked. Broken hearts require 2 adjacent matches to repair into normal hearts."
+        desc = "Chains anchor a heart until unlocked. Broken hearts move but cannot match; repair every layer to count one repair. Stitched hearts also heal adjacent broken or stitched hearts when repaired."
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(modifier = Modifier.size(44.dp)) { TileView(tile = Tile.Blocker(blockerType = BlockerType.CHAINED_HEART, payloadTile = Tile.Normal(color = HeartColor.PINK), durability = 1)) }
@@ -251,7 +257,7 @@ fun BlockersTab() {
 
     TutorialCard(
         title = "Dark Heart",
-        desc = "Corrupted void heart! Spreads dark infection to adjacent cells if left undamaged across turns."
+        desc = "Spreads after paid swaps if no dark heart was hit. Free boosters never advance its spread timer."
     ) {
         Box(modifier = Modifier.size(44.dp)) {
             TileView(tile = Tile.Blocker(blockerType = BlockerType.DARK_HEART, durability = 1))
@@ -263,17 +269,17 @@ fun BlockersTab() {
 fun BoostersTab() {
     TutorialCard(
         title = "🔨 Heart Hammer",
-        desc = "Tap any cell on the board to instantly smash and destroy that tile or blocker without consuming a move."
+        desc = "Tap to preview, then tap the same cell to spend one hammer. Removes one blocker layer, clears a normal heart, or activates a special. Cascades resolve without spending a move."
     )
 
     TutorialCard(
         title = "💣 Bomb Booster",
-        desc = "Drop a pre-charged Bomb Heart onto any target cell on the board."
+        desc = "Replace a normal heart with a bomb of the same color. Match it or combine it with another special to activate. Cannot overwrite blockers."
     )
 
     TutorialCard(
         title = "🌈 Rainbow Booster",
-        desc = "Drop a dazzling Rainbow Heart anywhere on the board for instant mass color clearing."
+        desc = "Replace a normal heart with a rainbow. Swap it with a colored heart to activate. Preview uses the placed heart color; actual targets use the swap partner."
     )
 
     TutorialCard(
@@ -296,9 +302,9 @@ fun TutorialCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(20.dp))
-            .background(Color(0xFF2E0854).copy(alpha = 0.95f), RoundedCornerShape(20.dp))
-            .border(1.5.dp, Color(0xFFFF80AB).copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+            .shadow(6.dp, RoundedCornerShape(20.dp))
+            .background(GardenPalette.Panel.copy(alpha = 0.95f), RoundedCornerShape(20.dp))
+            .border(1.5.dp, GardenPalette.RoseLight.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
             .padding(16.dp)
     ) {
         Row(
@@ -308,7 +314,7 @@ fun TutorialCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    color = Color(0xFFFFD54F),
+                    color = GardenPalette.Gold,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )

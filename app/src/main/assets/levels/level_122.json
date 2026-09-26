@@ -1,0 +1,35 @@
+{
+  "id": 122,
+  "name": "Thornwood Reach: Pearl Caverns",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "B", "O", "O", "O", "B", "O", "O"],
+      ["O", "O", "O", "B", "O", "B", "O", "O", "O"],
+      ["O", "O", "BR(GREEN)", "O", "O", "O", "BR(GREEN)", "O", "O"],
+      ["O", "O", "O", "BR(GREEN)", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 25,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [31800, 51300, 76800],
+  "randomSeed": 122,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "BARBED",
+      "amount": 4
+    },
+    {
+      "type": "REPAIR",
+      "amount": 3
+    }
+  ]
+}

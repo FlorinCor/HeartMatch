@@ -1,0 +1,35 @@
+{
+  "id": 181,
+  "name": "Everheart Citadel: Shimmering Strand",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "BR(RED)", "O", "O", "BR(RED)", "O", "O", "O"],
+      ["O", "O", "O", "BR(RED)", "O", "O", "I(YELLOW)", "O", "O"],
+      ["O", "O", "I(YELLOW)", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 22,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [42000, 66000, 96000],
+  "randomSeed": 181,
+  "objectives": [
+    {
+      "type": "REPAIR",
+      "amount": 3
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 2
+    }
+  ]
+}

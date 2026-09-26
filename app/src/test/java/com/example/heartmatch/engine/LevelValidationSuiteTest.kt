@@ -15,27 +15,21 @@ import java.io.File
 class LevelValidationSuiteTest {
 
     companion object {
-        private val allLevels: Map<Int, LevelConfig> = (1..100).associateWith { id ->
+        private val allLevels: Map<Int, LevelConfig> = (1..200).associateWith { id ->
             LevelGenerator.getLevelConfig(id)
         }
 
         @JvmStatic
         @BeforeClass
         fun exportAllLevelJsonFiles() {
+            // Canonical, single-scheme location: assets/levels/level_%03d.json
             val assetsDir = File("src/main/assets/levels")
-            val resourcesDir = File("src/main/resources/levels")
             assetsDir.mkdirs()
-            resourcesDir.mkdirs()
 
-            for (id in 1..100) {
+            for (id in 1..200) {
                 val json = LevelGenerator.generateLevelJson(id)
                 val fileNameFormatted = String.format("level_%03d.json", id)
-                val fileNameSimple = "level_$id.json"
-
                 File(assetsDir, fileNameFormatted).writeText(json)
-                File(assetsDir, fileNameSimple).writeText(json)
-                File(resourcesDir, fileNameFormatted).writeText(json)
-                File(resourcesDir, fileNameSimple).writeText(json)
             }
         }
     }
@@ -45,9 +39,9 @@ class LevelValidationSuiteTest {
     private val matchDetector = MatchDetector()
 
     @Test
-    fun testAll100LevelsAreGeneratedAndSyntacticallyValid() {
-        assertEquals(100, allLevels.size)
-        for (id in 1..100) {
+    fun testAll200LevelsAreGeneratedAndSyntacticallyValid() {
+        assertEquals(200, allLevels.size)
+        for (id in 1..200) {
             val config = allLevels[id]
             assertNotNull("Level $id must exist", config)
             assertEquals("Level id must match $id", id, config!!.id)
@@ -56,8 +50,8 @@ class LevelValidationSuiteTest {
     }
 
     @Test
-    fun testAll100LevelsPassLevelValidator() {
-        for (id in 1..100) {
+    fun testAll200LevelsPassLevelValidator() {
+        for (id in 1..200) {
             val config = allLevels[id]!!
             val result = validator.validate(config)
             assertTrue("Level $id failed validation:\n" + result.errors.joinToString("\n- ", prefix = "- "), result.isValid)
@@ -66,7 +60,7 @@ class LevelValidationSuiteTest {
 
     @Test
     fun testValidBoardConfigurations() {
-        for (id in 1..100) {
+        for (id in 1..200) {
             val config = allLevels[id]!!
             assertTrue("Level $id rows must be between 6 and 12 (got ${config.rows})", config.rows in 6..12)
             assertTrue("Level $id cols must be between 6 and 12 (got ${config.cols})", config.cols in 6..12)
@@ -86,7 +80,7 @@ class LevelValidationSuiteTest {
 
     @Test
     fun testAchievableObjectives() {
-        for (id in 1..100) {
+        for (id in 1..200) {
             val config = allLevels[id]!!
             assertFalse("Level $id must have at least one objective", config.objectives.isEmpty())
 
@@ -149,7 +143,7 @@ class LevelValidationSuiteTest {
 
     @Test
     fun testValidMoveAvailabilityAndNoImmediateImpossibleState() {
-        for (id in 1..100) {
+        for (id in 1..200) {
             val config = allLevels[id]!!
             val engine = HeartMatchEngine(config)
 
@@ -171,7 +165,7 @@ class LevelValidationSuiteTest {
 
     @Test
     fun testReasonableDifficultyProgression() {
-        for (id in 1..100) {
+        for (id in 1..200) {
             val config = allLevels[id]!!
 
             // Move limits between 15 and 35
@@ -192,6 +186,7 @@ class LevelValidationSuiteTest {
                 in 41..60 -> assertTrue("Tier 4 Level $id color count ($colorCount) must be 5 or 6", colorCount in 5..6)
                 in 61..80 -> assertTrue("Tier 5 Level $id color count ($colorCount) must be 5 or 6", colorCount in 5..6)
                 in 81..100 -> assertTrue("Tier 6 Level $id color count ($colorCount) must be 5 to 7", colorCount in 5..7)
+                in 101..200 -> assertTrue("Advanced Level $id color count ($colorCount) must be 5 or 6", colorCount in 5..6)
             }
         }
     }
@@ -251,6 +246,13 @@ class LevelValidationSuiteTest {
             assertTrue("Expert levels must feature multiple objectives (got ${config.objectives.size} on Level $id)",
                 config.objectives.size >= 2)
         }
+
+        // Levels 101-200: advanced chapters keep expert pacing and mixed objectives.
+        for (id in 101..200) {
+            val config = allLevels[id]!!
+            assertEquals("Levels 101-200 must be EXPERT difficulty", LevelDifficulty.EXPERT, config.difficulty)
+            assertTrue("Advanced level $id must feature multiple objectives", config.objectives.size >= 2)
+        }
     }
 
     @Test
@@ -264,7 +266,11 @@ class LevelValidationSuiteTest {
         assertEquals(100, level100.id)
         assertEquals("Heart Match Master Champion", level100.name)
 
+        val level200 = repo.getLevel(200)
+        assertEquals(200, level200.id)
+        assertEquals("Everheart Citadel: The Last Tide", level200.name)
+
         val all = repo.getAllLevels()
-        assertEquals(100, all.size)
+        assertEquals(200, all.size)
     }
 }

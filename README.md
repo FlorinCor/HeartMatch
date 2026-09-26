@@ -134,16 +134,16 @@ Heart Match is crafted with modern Android development best practices and Clean 
                                  │                  │
                ┌─────────────────┴────┐      ┌──────┴────────────────┐
                ▼                      ▼      ▼                       ▼
-   ┌──────────────────────┐  ┌─────────────┐ ┌─────────────┐ ┌───────────────┐
-   │  Match-3 Game Engine │  │Sound Manager│ │ Player Repo │ │ Backend Client│
-   │   (Deterministic)    │  │ (Synth PCM) │ │(Preferences)│ │  (REST HTTP)  │
-   └──────────┬───────────┘  └─────────────┘ └─────────────┘ └───────┬───────┘
-              │                                                      │
-              ▼                                                      ▼
-   ┌──────────────────────┐                         ┌────────────────────────┐
-   │ Data-Driven Level    │                         │ Embedded Server/Router │
-   │ Loader (100 JSONs)   │                         │ Validation & Anti-Cheat│
-   └──────────────────────┘                         └────────────────────────┘
+   ┌──────────────────────┐  ┌─────────────┐ ┌─────────────┐
+   │  Match-3 Game Engine │  │Sound Manager│ │ Player Repo │
+   │   (Deterministic)    │  │ (Synth PCM) │ │(Preferences)│
+   └──────────┬───────────┘  └─────────────┘ └─────────────┘
+              │
+              ▼
+   ┌──────────────────────┐
+   │ Data-Driven Level    │
+   │ Loader (100 JSONs)   │
+   └──────────────────────┘
 ```
 
 ### 📱 Key Components
@@ -155,7 +155,7 @@ Heart Match is crafted with modern Android development best practices and Clean 
   * `BlockerHandler`: Life-cycle management for 10+ blocker and obstacle types.
   * `SpecialEffectHandler`: Cascading chain reactions and special combo detonations.
 * **Synthesized Audio Engine (`SoundManager`)**: Dynamic on-the-fly PCM audio generation (chords, sweeps, laser tones, chimes) and synchronized device haptics without requiring heavy audio asset files.
-* **Embedded Backend & REST API (`HeartMatchRouter`)**: Built-in HTTP router and client supporting game state validation, move verification, player progress synchronization, and level delivery.
+* **Local persistence**: `PlayerRepository` stores profile, settings, boosters, and level progress in Android `SharedPreferences`. The app has no backend or account synchronization.
 
 ---
 
@@ -167,21 +167,16 @@ HeartMatch/
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── assets/
-│   │   │   │   ├── assets/       # Vector SVG assets (hearts, blockers, effects, backgrounds)
 │   │   │   │   └── levels/       # 100 JSON level definitions (level_001.json - level_100.json)
 │   │   │   ├── java/com/example/heartmatch/
 │   │   │   │   ├── audio/        # SoundManager (PCM audio synthesizer & haptics)
-│   │   │   │   ├── backend/      # Embedded HTTP server, API client, DTOs, and repositories
 │   │   │   │   ├── data/         # PlayerRepository and local state management
 │   │   │   │   ├── engine/       # Core match-3 engine, gravity, matches, blockers, level loader
-│   │   │   │   ├── graphics/     # Vector graphics, SVG generator, and animation models
 │   │   │   │   ├── ui/           # Jetpack Compose UI (screens, components, themes, ViewModel)
 │   │   │   │   └── MainActivity.kt
 │   │   │   └── res/              # Android drawables, mipmaps, and app values
 │   │   └── test/java/com/example/heartmatch/
-│   │       ├── backend/          # Backend server and validation unit tests
 │   │       ├── engine/           # Engine, gravity, blocker, match, and level validation tests
-│   │       ├── graphics/         # Asset rendering unit tests
 │   │       ├── simulation/       # Monte Carlo game balance and simulator tests
 │   │       └── ui/               # UI and Level Map integration tests
 ├── docs/
@@ -199,7 +194,7 @@ HeartMatch/
 ### Prerequisites
 * **Android Studio**: Android Studio Ladybug (2024.2+) or newer
 * **JDK**: Java 17 or Java 21 (Eclipse Adoptium Recommended)
-* **Android SDK**: `compileSdk = 37`, `minSdk = 26`, `targetSdk = 37`
+* **Android SDK**: `compileSdk = 36`, `minSdk = 26`, `targetSdk = 36`
 
 ### Building from Command Line
 Clone the repository and build the project using Gradle:
@@ -223,14 +218,13 @@ cd HeartMatch
 
 ## 🧪 Testing & Validation
 
-The project includes **24 automated test suites** guaranteeing gameplay stability, game balance, and server-side validation:
+The project includes unit tests for the game engine, level data, simulation, audio synthesis, and UI systems. The app stores progress locally and has no server-side component.
 
 * **`HeartMatchEngineIntegrationTest`**: Full end-to-end match-3 lifecycle, turn pipeline, score tracking, and victory triggers.
 * **`GravityAndCascadeTest`**: Verification of vertical falling physics, multi-column cascades, and tile replenishment.
 * **`BlockerTest`**: Comprehensive durability checks for Stone, Ice, Wood, Barbed, Chained, Broken, Stitched, and Dark hearts.
 * **`SpecialEffectTest`**: Unit coverage for Bomb, Fire, Rainbow explosions and synergy combos.
 * **`LevelValidationSuiteTest`**: Data-integrity and solvability checks for all 100 JSON level files.
-* **`HeartMatchHttpServerIntegrationTest`**: Real HTTP server testing of move submission, anti-cheat validation, and progress tracking.
 
 Run the test suite with:
 ```bash
@@ -248,3 +242,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 <p align="center">
   Made with ❤️ for a brighter, kinder, and more colorful world.
 </p>
+
+## Gameplay update
+
+See [the 16 gameplay and reward improvements](docs/gameplay-improvements.md) for scoring, booster rules, daily gifts, the coin shop, level pacing, and reproducible balance checks. Device tests use `./gradlew -Pqa connectedDebugAndroidTest` to keep their saves separate from the real game.

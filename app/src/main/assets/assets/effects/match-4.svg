@@ -1,8 +1,0 @@
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-                <g id="effect-root">
-                    <rect x="36" y="226" width="440" height="60" rx="30" fill="#FF6D00"/>
-<rect x="226" y="36" width="60" height="440" rx="30" fill="#FF6D00"/>
-<circle cx="256" cy="256" r="90" fill="#FFD600"/>
-<polygon points="256,20 280,220 492,256 280,292 256,492 232,292 20,256 232,220" fill="#FFFFFF"/>
-                </g>
-            </svg>

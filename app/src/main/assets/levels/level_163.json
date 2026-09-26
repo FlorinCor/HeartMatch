@@ -1,0 +1,35 @@
+{
+  "id": 163,
+  "name": "Ember Heartlands: Glass Garden",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "W2", "O", "O", "O", "W2", "O", "O"],
+      ["O", "O", "O", "W2", "O", "W2", "O", "O", "O"],
+      ["O", "O", "W2", "O", "O", "O", "D", "O", "O"],
+      ["O", "O", "O", "D", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 23,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [39100, 61600, 90100],
+  "randomSeed": 163,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 5
+    },
+    {
+      "type": "CLEAR_DARK",
+      "amount": 2
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package com.example.heartmatch.ui.screens
 
+import com.example.heartmatch.ui.theme.GardenPalette
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -25,10 +26,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import com.example.heartmatch.ui.components.GardenBackdrop
+import com.example.heartmatch.ui.components.GardenIcon
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -47,12 +57,14 @@ import com.example.heartmatch.ui.components.LaserBeamData
 import com.example.heartmatch.ui.components.ParticleBurst
 import com.example.heartmatch.ui.components.ScorePopupData
 import com.example.heartmatch.ui.components.TopHudView
+import com.example.heartmatch.ui.animation.BoardDisplayState
 import com.example.heartmatch.ui.viewmodel.DefeatData
 import com.example.heartmatch.ui.viewmodel.VictoryData
 
 @Composable
 fun GameScreen(
     gameState: GameState?,
+    boardDisplay: BoardDisplayState,
     playerProfile: PlayerProfile,
     selectedCoord: Coord?,
     hintedCoords: List<Coord>,
@@ -88,24 +100,33 @@ fun GameScreen(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF1E0A30),
-                        Color(0xFF3F145B),
-                        Color(0xFF140824)
+                        GardenPalette.Background,
+                        GardenPalette.Panel,
+                        GardenPalette.Background
                     )
                 )
             )
     ) {
+        GardenBackdrop(dim = 0.86f)
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // 1. Top HUD
-            TopHudView(gameState = gameState)
+            TopHudView(gameState = gameState, modifier = Modifier.testTag("puzzle-hud"))
 
-            // 2. Center Game Board
+            // Fit the board to the remaining height as well as the screen width.
+            BoxWithConstraints(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                val visibleBoard = boardDisplay.board ?: gameState.board
+                val boardRatio = visibleBoard.cols.toFloat() / visibleBoard.rows.toFloat()
+                val boardWidth = minOf(maxWidth, maxHeight * boardRatio)
             BoardView(
-                board = gameState.board,
+                board = boardDisplay.board ?: gameState.board,
+                displayState = boardDisplay,
                 selectedCoord = selectedCoord,
                 hintedCoords = hintedCoords,
                 activeBooster = activeBooster,
@@ -121,16 +142,24 @@ fun GameScreen(
                 onScorePopupFinished = onScorePopupFinished,
                 onBlastWaveFinished = onBlastWaveFinished,
                 onLaserFinished = onLaserFinished,
-                modifier = Modifier.weight(1f, fill = false)
+                modifier = Modifier.width(boardWidth).testTag("puzzle-board")
             )
+            }
 
+            if (activeBooster == null && selectedCoord != null && gameState.board.getTile(selectedCoord) is com.example.heartmatch.engine.model.Tile.Special)
+                Text("Current activation preview · swapping can change targets", color=GardenPalette.Gold, fontSize=11.sp)
+            if (activeBooster != null) Text(
+                if (activeBooster == "HAMMER") "Tap to preview · tap same cell again to use 1 hammer"
+                else "Normal heart only · tap twice to place 1 ${activeBooster.lowercase()}. Highlight previews its effect; rainbow uses swapped color.",
+                modifier=Modifier.padding(horizontal=12.dp), color=GardenPalette.Gold, fontSize=12.sp)
             // 3. Bottom Boosters & Pause Bar
             BoostersView(
                 profile = playerProfile,
                 activeBooster = activeBooster,
                 onBoosterClick = onBoosterClick,
                 onCancelBooster = onCancelBooster,
-                onPauseClick = onPauseClick
+                onPauseClick = onPauseClick,
+                modifier = Modifier.testTag("puzzle-boosters")
             )
         }
 
@@ -167,280 +196,65 @@ fun GameScreen(
 }
 
 @Composable
-fun PauseModal(
-    onResume: () -> Unit,
-    onRestart: () -> Unit,
-    onQuit: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.75f))
-            .clickable(enabled = false) {},
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .shadow(24.dp, RoundedCornerShape(28.dp))
-                .background(
-                    brush = Brush.verticalGradient(listOf(Color(0xFF3F145B), Color(0xFF1E0A30))),
-                    shape = RoundedCornerShape(28.dp)
-                )
-                .border(2.5.dp, Color(0xFFFF80AB), RoundedCornerShape(28.dp))
-                .padding(24.dp)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "GAME PAUSED",
-                    color = Color.White,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black
-                )
+private fun GardenModal(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    Dialog(onDismissRequest=onDismiss,properties=DialogProperties(usePlatformDefaultWidth=false)) {
+        Column(Modifier.padding(20.dp).widthIn(max=420.dp).fillMaxWidth()
+            .background(GardenPalette.Panel,RoundedCornerShape(24.dp))
+            .border(1.dp,GardenPalette.Rim.copy(alpha=0.5f),RoundedCornerShape(24.dp))
+            .verticalScroll(rememberScrollState()).padding(24.dp),
+            horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(14.dp),content=content)
+    }
+}
 
-                // Resume Button
-                ModalButton(text = "RESUME ▶", color1 = Color(0xFFFF4081), color2 = Color(0xFFFF8F00), onClick = onResume)
+@Composable
+fun PauseModal(onResume: () -> Unit,onRestart: () -> Unit,onQuit: () -> Unit) {
+    GardenModal(onResume) {
+        Text("Take a breath",fontSize=26.sp,fontWeight=FontWeight.Bold,color=GardenPalette.Ivory)
+        Text("Your puzzle is paused",fontSize=14.sp,color=GardenPalette.Ivory.copy(alpha=0.7f))
+        ModalButton("Resume",GardenPalette.Rose,GardenPalette.RoseDark,onResume)
+        OutlinedButton(onClick=onRestart,modifier=Modifier.fillMaxWidth()){Text("Restart",color=GardenPalette.Ivory)}
+        TextButton(onClick=onQuit){Text("Back to garden",color=GardenPalette.Gold)}
+    }
+}
 
-                // Restart Button
-                ModalButton(text = "RESTART ↻", color1 = Color(0xFF7B1FA2), color2 = Color(0xFF512DA8), onClick = onRestart)
-
-                // Quit to Map Button
-                ModalButton(text = "QUIT TO MAP 🗺", color1 = Color(0xFF424242), color2 = Color(0xFF212121), onClick = onQuit)
-            }
+@Composable
+fun VictoryModal(data: VictoryData,onNextLevel: () -> Unit,onReplay: () -> Unit,onQuit: () -> Unit) {
+    GardenModal({}) {
+        Text("Beautifully done",fontSize=26.sp,fontWeight=FontWeight.Bold,color=GardenPalette.Ivory)
+        Text("Level ${data.levelId} complete",color=GardenPalette.Ivory.copy(alpha=0.7f))
+        Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+            for(i in 1..3) Text("★",color=if(i<=data.stars) GardenPalette.Gold else GardenPalette.Rim,fontSize=40.sp)
+        }
+        Text("${data.score} points",color=GardenPalette.Ivory,fontSize=22.sp,fontWeight=FontWeight.Bold)
+        with(data.breakdown) {
+            Text("Hearts $hearts · creations $creations · blockers $blockers\nSpecials $specials · cascades $cascades · unused moves $remainingMoves",
+                color=GardenPalette.Ivory, fontSize=12.sp)
+        }
+        if (data.milestone) Text("Garden milestone: +1 hammer and +1 shuffle", color=GardenPalette.Gold)
+        Text("+${data.coinsEarned} coins",color=GardenPalette.Gold,fontSize=16.sp)
+        ModalButton("Continue",GardenPalette.Rose,GardenPalette.RoseDark,onNextLevel)
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly) {
+            TextButton(onClick=onReplay){Text("Replay",color=GardenPalette.Ivory)}
+            TextButton(onClick=onQuit){Text("Garden",color=GardenPalette.Ivory)}
         }
     }
 }
 
 @Composable
-fun VictoryModal(
-    data: VictoryData,
-    onNextLevel: () -> Unit,
-    onReplay: () -> Unit,
-    onQuit: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.8f))
-            .clickable(enabled = false) {},
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.88f)
-                .shadow(32.dp, RoundedCornerShape(32.dp))
-                .background(
-                    brush = Brush.verticalGradient(listOf(Color(0xFF4A148C), Color(0xFF1A002C))),
-                    shape = RoundedCornerShape(32.dp)
-                )
-                .border(3.dp, Color(0xFFFFD700), RoundedCornerShape(32.dp))
-                .padding(24.dp)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "LEVEL COMPLETED!",
-                    color = Color(0xFFFFD54F),
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // 3 Stars Celebration Row
-                Row(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    for (i in 1..3) {
-                        val isEarned = i <= data.stars
-                        Text(
-                            text = "★",
-                            color = if (isEarned) Color(0xFFFFD700) else Color(0x55FFFFFF),
-                            fontSize = if (i == 2) 48.sp else 38.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = "Final Score: ${data.score}",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Text(
-                    text = "+${data.coinsEarned} Coins Earned 💰",
-                    color = Color(0xFFFFD700),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Next Level Button
-                ModalButton(
-                    text = "NEXT LEVEL ▶",
-                    color1 = Color(0xFFFF4081),
-                    color2 = Color(0xFFFF8F00),
-                    onClick = onNextLevel
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Replay & Quit row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .shadow(8.dp, RoundedCornerShape(20.dp))
-                            .background(Color(0xFF2E0854), RoundedCornerShape(20.dp))
-                            .border(1.5.dp, Color(0xFFFF80AB), RoundedCornerShape(20.dp))
-                            .clickable { onReplay() }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "Replay ↻", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .shadow(8.dp, RoundedCornerShape(20.dp))
-                            .background(Color(0xFF2E0854), RoundedCornerShape(20.dp))
-                            .border(1.5.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
-                            .clickable { onQuit() }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "Level Map 🗺", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
+fun DefeatModal(data: DefeatData,extraMovesCount: Int,onUseExtraMoves: () -> Unit,onRetry: () -> Unit,onQuit: () -> Unit) {
+    GardenModal({}) {
+        Text("Out of moves",fontSize=26.sp,fontWeight=FontWeight.Bold,color=GardenPalette.Ivory)
+        Text("Another try, another chance to bloom.",color=GardenPalette.Ivory.copy(alpha=0.7f),fontSize=14.sp)
+        if(extraMovesCount>0) ModalButton("Use +5 moves ($extraMovesCount left)",GardenPalette.PanelLight,GardenPalette.Panel,onUseExtraMoves)
+        ModalButton("Try again",GardenPalette.Rose,GardenPalette.RoseDark,onRetry)
+        TextButton(onClick=onQuit){Text("Back to garden",color=GardenPalette.Gold)}
     }
 }
 
 @Composable
-fun DefeatModal(
-    data: DefeatData,
-    extraMovesCount: Int,
-    onUseExtraMoves: () -> Unit,
-    onRetry: () -> Unit,
-    onQuit: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.8f))
-            .clickable(enabled = false) {},
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.88f)
-                .shadow(32.dp, RoundedCornerShape(32.dp))
-                .background(
-                    brush = Brush.verticalGradient(listOf(Color(0xFF3E121D), Color(0xFF1E0A14))),
-                    shape = RoundedCornerShape(32.dp)
-                )
-                .border(3.dp, Color(0xFFFF5252), RoundedCornerShape(32.dp))
-                .padding(24.dp)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "OUT OF MOVES!",
-                    color = Color(0xFFFF5252),
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = "Don't give up! Keep your romance alive.",
-                    color = Color(0xFFFFCDD2),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium
-                )
-
-                Spacer(modifier = Modifier.height(22.dp))
-
-                // +5 Extra Moves option
-                if (extraMovesCount > 0) {
-                    ModalButton(
-                        text = "USE +5 MOVES ($extraMovesCount LEFT)",
-                        color1 = Color(0xFF4CAF50),
-                        color2 = Color(0xFF2E7D32),
-                        onClick = onUseExtraMoves
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                }
-
-                // Retry Button
-                ModalButton(
-                    text = "RETRY LEVEL ↻",
-                    color1 = Color(0xFFFF4081),
-                    color2 = Color(0xFFE91E63),
-                    onClick = onRetry
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Quit to Map
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0x33FFFFFF), RoundedCornerShape(20.dp))
-                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
-                        .clickable { onQuit() }
-                        .padding(vertical = 12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "Quit to Map 🗺", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ModalButton(
-    text: String,
-    color1: Color,
-    color2: Color,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(12.dp, RoundedCornerShape(22.dp))
-            .background(
-                brush = Brush.horizontalGradient(listOf(color1, color2)),
-                shape = RoundedCornerShape(22.dp)
-            )
-            .border(2.dp, Color.White, RoundedCornerShape(22.dp))
-            .clickable { onClick() }
-            .padding(vertical = 14.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = Color.White,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Black
-        )
+fun ModalButton(text: String,color1: Color,color2: Color,onClick: () -> Unit) {
+    Button(onClick=onClick,modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(16.dp),
+        colors=ButtonDefaults.buttonColors(containerColor=color1,contentColor=GardenPalette.Ivory)) {
+        Text(text,fontSize=16.sp,fontWeight=FontWeight.Bold)
     }
 }

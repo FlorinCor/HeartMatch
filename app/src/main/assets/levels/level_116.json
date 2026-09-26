@@ -1,0 +1,36 @@
+{
+  "id": 116,
+  "name": "Crystal Cove: Moonstone Shelf",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "I(BLUE)", "O", "O", "I(BLUE)", "O", "O", "O"],
+      ["O", "O", "O", "I(BLUE)", "O", "O", "S2", "O", "O"],
+      ["O", "O", "S2", "O", "O", "S2", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 26,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [32500, 50500, 74500],
+  "randomSeed": 116,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 3
+    },
+    {
+      "type": "COLLECT",
+      "heartType": "RED",
+      "amount": 22
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 package com.example.heartmatch.ui.navigation
 
 sealed class Screen {
+    object Shop : Screen()
     object Splash : Screen()
     object MainMenu : Screen()
     object LevelMap : Screen()

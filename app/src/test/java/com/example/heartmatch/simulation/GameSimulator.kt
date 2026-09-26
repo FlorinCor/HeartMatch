@@ -151,24 +151,27 @@ class GameSimulator {
             if (strategy == AgentStrategy.BOOSTER_ASSISTED) {
                 val completion = calculateObjectiveRatio(state)
                 if (state.movesRemaining <= 3 && completion >= 0.70 && (simulatedBoostersAvailable["EXTRA_MOVES"] ?: 0) > 0) {
-                    state.movesRemaining += 5
+                    engine.addExtraMoves()
                     simulatedBoostersAvailable["EXTRA_MOVES"] = simulatedBoostersAvailable["EXTRA_MOVES"]!! - 1
                     boostersUsed["EXTRA_MOVES"] = (boostersUsed["EXTRA_MOVES"] ?: 0) + 1
                 } else if (state.movesRemaining <= 5 && completion in 0.5..0.95 && (simulatedBoostersAvailable["HAMMER"] ?: 0) > 0) {
                     // Try to hammer an annoying blocker
                     val targetBlockerCoord = findBestHammerTarget(state)
                     if (targetBlockerCoord != null) {
-                        state.board.setTile(targetBlockerCoord, null)
+                        engine.applyHammer(targetBlockerCoord)
                         simulatedBoostersAvailable["HAMMER"] = simulatedBoostersAvailable["HAMMER"]!! - 1
                         boostersUsed["HAMMER"] = (boostersUsed["HAMMER"] ?: 0) + 1
                     }
                 }
             }
 
+            if (engine.getState().status != GameStatus.READY_FOR_INPUT) break
+            val refreshedMoves = engine.getPossibleMoves()
+            if (refreshedMoves.isEmpty()) break
             val chosenMove = when (strategy) {
-                AgentStrategy.RANDOM -> selectRandomMove(possibleMoves, rng)
-                AgentStrategy.GREEDY -> selectGreedyMove(engine, state, possibleMoves)
-                AgentStrategy.STRATEGIC, AgentStrategy.BOOSTER_ASSISTED -> selectStrategicMove(engine, state, possibleMoves, config)
+                AgentStrategy.RANDOM -> selectRandomMove(refreshedMoves, rng)
+                AgentStrategy.GREEDY -> selectGreedyMove(engine, state, refreshedMoves)
+                AgentStrategy.STRATEGIC, AgentStrategy.BOOSTER_ASSISTED -> engine.getRankedMoves().first()
             }
 
             val result = engine.swap(chosenMove.first, chosenMove.second)

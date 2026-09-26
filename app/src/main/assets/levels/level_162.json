@@ -1,0 +1,36 @@
+{
+  "id": 162,
+  "name": "Ember Heartlands: Pearl Caverns",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "C(GREEN)", "O", "O", "O", "C(GREEN)", "O", "O"],
+      ["O", "O", "O", "C(GREEN)", "O", "C(GREEN)", "O", "O", "O"],
+      ["O", "O", "I(PURPLE)", "O", "O", "O", "I(PURPLE)", "O", "O"],
+      ["O", "O", "O", "I(PURPLE)", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 23,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [38800, 61300, 89800],
+  "randomSeed": 162,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "CHAINED",
+      "amount": 4
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 3
+    }
+  ]
+}

@@ -12,9 +12,12 @@ import com.example.heartmatch.data.LevelRecord
 import com.example.heartmatch.data.PlayerProfile
 import com.example.heartmatch.data.PlayerRepository
 import com.example.heartmatch.engine.core.HeartMatchEngine
+import com.example.heartmatch.engine.core.MatchDetector
+import com.example.heartmatch.engine.core.MoveValidator
 import com.example.heartmatch.engine.loader.LevelRepository
 import com.example.heartmatch.engine.model.BlockerType
 import com.example.heartmatch.engine.model.Board
+import com.example.heartmatch.engine.model.CellState
 import com.example.heartmatch.engine.model.Coord
 import com.example.heartmatch.engine.model.EngineEvent
 import com.example.heartmatch.engine.model.FireDirection
@@ -30,24 +33,31 @@ import com.example.heartmatch.ui.animation.TurnChoreographer
 import com.example.heartmatch.ui.animation.TurnStep
 import com.example.heartmatch.ui.components.BlastWaveData
 import com.example.heartmatch.ui.components.ComboBannerData
+import com.example.heartmatch.ui.components.DebrisMaterial
 import com.example.heartmatch.ui.components.HeartColors
 import com.example.heartmatch.ui.components.LaserBeamData
 import com.example.heartmatch.ui.components.ParticleBurst
 import com.example.heartmatch.ui.components.ScorePopupData
+import com.example.heartmatch.ui.components.createBubblePopParticles
 import com.example.heartmatch.ui.components.createBurstParticles
+import com.example.heartmatch.ui.components.createDebrisParticles
 import com.example.heartmatch.ui.navigation.Screen
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class VictoryData(
     val levelId: Int,
     val score: Int,
     val stars: Int,
-    val coinsEarned: Int
+    val coinsEarned: Int,
+    val breakdown: com.example.heartmatch.engine.model.ScoreBreakdown,
+    val milestone: Boolean
 )
 
 data class DefeatData(
@@ -58,12 +68,16 @@ data class DefeatData(
 class HeartMatchViewModel(application: Application) : AndroidViewModel(application) {
 
     private val playerRepository = PlayerRepository(application)
-    private val levelRepository = LevelRepository(resourceClassLoader = application.classLoader)
+    private val levelRepository = LevelRepository(
+        assetOpener = { path -> runCatching { application.assets.open(path) }.getOrNull() },
+        resourceClassLoader = application.classLoader
+    )
+    val totalAvailableStars = application.assets.list("levels").orEmpty().count { it.startsWith("level_") && it.endsWith(".json") } * 3
     private val soundManager = SoundManager(application)
     private val turnChoreographer = TurnChoreographer()
     private var engine = HeartMatchEngine()
 
-    private val _currentScreen = MutableStateFlow<Screen>(Screen.Splash)
+    private val _currentScreen = MutableStateFlow<Screen>(Screen.LevelMap)
     val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
 
     private val _playerProfile = MutableStateFlow(playerRepository.getProfile())
@@ -113,6 +127,9 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
     private val _comboBanner = MutableStateFlow<ComboBannerData?>(null)
     val comboBanner: StateFlow<ComboBannerData?> = _comboBanner.asStateFlow()
 
+    private var resultJob: Job? = null
+    private var rewarded = false
+    private var boosterTarget: Coord? = null
     private var hintJob: Job? = null
     private var turnJob: Job? = null
     private val isTurnRunning: Boolean get() = turnJob?.isActive == true
@@ -123,6 +140,7 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
 
     fun navigateTo(screen: Screen) {
         playButtonFeedback()
+        if (screen != Screen.Gameplay) { resultJob?.cancel(); hintJob?.cancel(); turnJob?.cancel() }
         _currentScreen.value = screen
     }
 
@@ -165,7 +183,10 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
         _isPaused.value = false
 
         turnJob?.cancel()
-        val config = levelRepository.getLevel(levelId)
+        resultJob?.cancel()
+        rewarded = false
+        boosterTarget = null
+        val config = randomizeStartingHearts(levelRepository.getLevel(levelId))
         engine = HeartMatchEngine(config)
         _gameState.value = engine.getState()
         publishBoard(engine.getState().board)
@@ -174,22 +195,68 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
         startHintTimer()
     }
 
+    private fun randomizeStartingHearts(config: LevelConfig): LevelConfig {
+        val seed = kotlin.random.Random.nextLong()
+        val initialTiles = config.initialTiles ?: return config.copy(randomSeed = seed)
+        val normalCoords = buildList {
+            for (row in 0 until config.rows) {
+                for (col in 0 until config.cols) {
+                    if (initialTiles.getOrNull(row)?.getOrNull(col) is Tile.Normal) add(Coord(row, col))
+                }
+            }
+        }
+        if (normalCoords.size < 2) return config.copy(randomSeed = seed)
+
+        val normalHearts = normalCoords.map { initialTiles[it.row][it.col]!! }
+        val matchDetector = MatchDetector()
+        val moveValidator = MoveValidator(matchDetector)
+        val random = kotlin.random.Random(seed)
+        val hasEmptyPlayableCells = (0 until config.rows).any { row ->
+            (0 until config.cols).any { col ->
+                val cellState = config.cellStates?.getOrNull(row)?.getOrNull(col)
+                val playable = cellState == null || cellState == CellState.PLAYABLE
+                playable && initialTiles.getOrNull(row)?.getOrNull(col) == null
+            }
+        }
+
+        repeat(250) {
+            val candidate = Array(config.rows) { row -> initialTiles[row].copyOf() }
+            val shuffledHearts = normalHearts.shuffled(random)
+            normalCoords.forEachIndexed { index, coord ->
+                candidate[coord.row][coord.col] = shuffledHearts[index]
+            }
+            val board = Board.createWithLayout(config.rows, config.cols, config.cellStates, candidate)
+            if (matchDetector.detectMatches(board).isEmpty() &&
+                (hasEmptyPlayableCells || moveValidator.findPossibleMoves(board).isNotEmpty())
+            ) {
+                return config.copy(initialTiles = candidate, randomSeed = seed)
+            }
+        }
+
+        // Keep the level's authored layout if no safe heart permutation was found.
+        return config.copy(randomSeed = seed)
+    }
+
     fun onCellClick(coord: Coord) {
         val state = _gameState.value ?: return
-        if (state.status != GameStatus.READY_FOR_INPUT || isTurnRunning) return
+        if (state.status != GameStatus.READY_FOR_INPUT || isTurnRunning || _isPaused.value) return
 
         val selected = _selectedCoord.value
         if (selected == null) {
             _selectedCoord.value = coord
+            _hintedCoords.value = if (state.board.getTile(coord) is Tile.Special) engine.previewTarget(coord).toList() else emptyList()
             playSelectFeedback()
         } else if (selected == coord) {
             _selectedCoord.value = null
+            _hintedCoords.value = emptyList()
+            startHintTimer()
             soundManager.haptic(HapticEffect.SELECT)
         } else if (selected.isAdjacentTo(coord)) {
             _selectedCoord.value = null
             executeSwap(selected, coord)
         } else {
             _selectedCoord.value = coord
+            _hintedCoords.value = if (state.board.getTile(coord) is Tile.Special) engine.previewTarget(coord).toList() else emptyList()
             playSelectFeedback()
         }
     }
@@ -206,13 +273,16 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
 
     private fun executeSwap(from: Coord, to: Coord) {
         val state = _gameState.value ?: return
-        if (state.status != GameStatus.READY_FOR_INPUT || isTurnRunning) return
+        if (state.status != GameStatus.READY_FOR_INPUT || isTurnRunning || _isPaused.value) return
 
         _hintedCoords.value = emptyList()
         hintJob?.cancel()
 
         turnJob = viewModelScope.launch {
             val boardBefore = state.board.clone()
+            // Publish a new value before the engine mutates its in-place GameState. This lets
+            // StateFlow observe the later move and objective updates as a distinct state too.
+            _gameState.value = state.copy(status = GameStatus.RESOLVING)
             val result = engine.swap(from, to)
             val finalState = engine.getState()
             val steps = turnChoreographer.build(boardBefore, result.events, finalState.board)
@@ -230,7 +300,11 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
             _boardDisplay.value = when (step) {
                 is TurnStep.Swap -> nextDisplay(step.board, swapFrom = step.from, swapTo = step.to)
                 is TurnStep.Clear -> nextDisplay(step.board, vanishing = step.vanishing)
-                is TurnStep.Settle -> nextDisplay(step.board, popInIds = step.popInIds)
+                is TurnStep.Settle -> nextDisplay(
+                    step.board,
+                    popInIds = step.popInIds,
+                    healedCoords = step.healedCoords
+                )
                 is TurnStep.Drop -> nextDisplay(step.board, fallOrigins = step.fallOrigins, popInIds = step.popInIds)
                 is TurnStep.Finish -> nextDisplay(step.board)
             }
@@ -244,7 +318,8 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
         swapFrom: Coord? = null,
         swapTo: Coord? = null,
         fallOrigins: Map<String, Int> = emptyMap(),
-        popInIds: Set<String> = emptySet()
+        popInIds: Set<String> = emptySet(),
+        healedCoords: Set<Coord> = emptySet()
     ): BoardDisplayState = BoardDisplayState(
         board = board,
         version = _boardDisplay.value.version + 1,
@@ -252,7 +327,8 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
         swapFrom = swapFrom,
         swapTo = swapTo,
         fallOrigins = fallOrigins,
-        popInIds = popInIds
+        popInIds = popInIds,
+        healedCoords = healedCoords
     )
 
     /** Shows [board] as-is (no transition hints); a fresh clone is published so the UI always sees a new snapshot. */
@@ -260,89 +336,81 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
         _boardDisplay.value = nextDisplay(board.clone())
     }
 
+    private fun stock(type: String): Int = with(_playerProfile.value) {
+        when (type) { "HAMMER" -> hammerCount; "BOMB" -> bombBoosterCount; "RAINBOW" -> rainbowBoosterCount;
+            "SHUFFLE" -> shuffleCount; "EXTRA_MOVES" -> extraMovesCount; else -> 0 }
+    }
+
     fun activateBooster(boosterType: String) {
-        playButtonFeedback()
-        val profile = _playerProfile.value
-        when (boosterType) {
-            "SHUFFLE" -> {
-                if (playerRepository.consumeBooster("SHUFFLE")) {
-                    refreshProfile()
-                    soundManager.playSound(SoundEffect.BOOSTER_USE)
-                    soundManager.haptic(HapticEffect.BOOSTER_USE)
-                    val state = _gameState.value
-                    if (state != null && !isTurnRunning) {
-                        // Reshuffle board
-                        engine.loadLevel(levelRepository.getLevel(state.levelId))
-                        _gameState.value = engine.getState()
-                        publishBoard(engine.getState().board)
-                    }
-                }
-            }
-            "EXTRA_MOVES" -> {
-                if (playerRepository.consumeBooster("EXTRA_MOVES")) {
-                    refreshProfile()
-                    soundManager.playSound(SoundEffect.BOOSTER_USE)
-                    soundManager.haptic(HapticEffect.BOOSTER_USE)
-                    val state = _gameState.value
-                    if (state != null) {
-                        state.movesRemaining += 5
-                        _gameState.value = state.copy(movesRemaining = state.movesRemaining)
-                    }
-                }
-            }
+        if (isTurnRunning || _isPaused.value || stock(boosterType) <= 0) return
+        val state = _gameState.value ?: return
+        val accepted = when (boosterType) {
+            "EXTRA_MOVES" -> engine.addExtraMoves()
+            "SHUFFLE" -> state.status == GameStatus.READY_FOR_INPUT && engine.reshuffleCurrentBoard()
             else -> {
-                // Targeted booster (Hammer, Bomb, Rainbow)
-                if (_activeBooster.value == boosterType) {
-                    _activeBooster.value = null
-                } else {
-                    _activeBooster.value = boosterType
-                }
+                if (state.status != GameStatus.READY_FOR_INPUT) return
+                cancelBooster()
+                _activeBooster.value = boosterType
+                return
             }
+        }
+        if (accepted) {
+            playerRepository.consumeBooster(boosterType)
+            resultJob?.cancel()
+            _defeatData.value = null
+            refreshProfile()
+            _gameState.value = engine.getState().copy()
+            publishBoard(engine.getState().board)
+            startHintTimer()
         }
     }
 
     fun cancelBooster() {
         _activeBooster.value = null
+        boosterTarget = null
+        _hintedCoords.value = emptyList()
     }
 
     fun applyBoosterTarget(coord: Coord) {
         val booster = _activeBooster.value ?: return
         val state = _gameState.value ?: return
-        val board = state.board
-        val cell = board[coord] ?: return
-        if (!cell.isPlayable || isTurnRunning) return
-
-        if (playerRepository.consumeBooster(booster)) {
-            refreshProfile()
-            _activeBooster.value = null
-            soundManager.playSound(SoundEffect.BOOSTER_USE)
-            soundManager.haptic(HapticEffect.BOOSTER_USE)
-
-            when (booster) {
-                "HAMMER" -> {
-                    // Destroy target cell tile / blocker
-                    val tile = cell.tile
-                    if (tile != null) {
-                        triggerBurst(coord, Color.White, 20)
-                        board.setTile(coord, null)
-                        soundManager.playSound(SoundEffect.BLOCKER_DESTROY)
-                    }
-                }
-                "BOMB" -> {
-                    board.setTile(coord, Tile.Special(specialType = SpecialHeartType.BOMB_HEART))
-                    triggerBlastWave(coord, Color(0xFFFF5252))
-                    soundManager.playSound(SoundEffect.SPECIAL_BOMB)
-                }
-                "RAINBOW" -> {
-                    board.setTile(coord, Tile.Special(specialType = SpecialHeartType.RAINBOW_HEART))
-                    triggerBurst(coord, Color(0xFFFFD700), 24)
-                    soundManager.playSound(SoundEffect.SPECIAL_RAINBOW)
-                }
+        val tile = state.board[coord]?.takeIf { it.isPlayable }?.tile ?: return
+        if (isTurnRunning || _isPaused.value || state.status != GameStatus.READY_FOR_INPUT || stock(booster) <= 0) return
+        if (booster != "HAMMER" && tile !is Tile.Normal) return
+        // First tap previews; a second tap on the same target confirms spending one item.
+        if (boosterTarget != coord) {
+            hintJob?.cancel()
+            boosterTarget = coord
+            _selectedCoord.value = coord
+            _hintedCoords.value = when (booster) {
+                "HAMMER" -> engine.previewTarget(coord).toList()
+                "BOMB" -> state.board.getAllPlayableCoords().filter { kotlin.math.abs(it.row - coord.row) <= 1 && kotlin.math.abs(it.col - coord.col) <= 1 }
+                else -> state.board.getAllPlayableCoords().filter { state.board.getTile(it)?.matchColor == tile.matchColor }
             }
-            _gameState.value = engine.getState()
-            publishBoard(board)
+            return
+        }
+        val before = state.board.clone()
+        val events = when (booster) {
+            "HAMMER" -> engine.applyHammer(coord).also { if (it.isEmpty()) return }
+            else -> {
+                if (!engine.placeBooster(if (booster == "BOMB") SpecialHeartType.BOMB_HEART else SpecialHeartType.RAINBOW_HEART, coord)) return
+                emptyList()
+            }
+        }
+        playerRepository.consumeBooster(booster)
+        refreshProfile()
+        cancelBooster()
+        _selectedCoord.value = null
+        turnJob = viewModelScope.launch {
+            _gameState.value = state.copy(status = GameStatus.RESOLVING)
+            playTurn(turnChoreographer.build(before, events, engine.getState().board))
+            _gameState.value = engine.getState().copy()
+            publishBoard(engine.getState().board)
+            startHintTimer()
         }
     }
+
+    fun purchase(item: String) { playerRepository.purchase(item); refreshProfile() }
 
     fun togglePause() {
         playButtonFeedback()
@@ -355,15 +423,15 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun claimDailyReward(day: Int, rewardCoins: Int, boosterType: String? = null) {
+        if (!playerRepository.claimDailyReward(day, rewardCoins, boosterType)) return
         soundManager.playSound(SoundEffect.STAR_EARNED)
         soundManager.haptic(HapticEffect.REWARD)
-        playerRepository.claimDailyReward(day, rewardCoins, boosterType)
         refreshProfile()
     }
 
-    fun updateSettings(sfx: Boolean, music: Boolean, haptics: Boolean) {
+    fun updateSettings(sfx: Boolean, haptics: Boolean, reducedMotion: Boolean) {
         val current = _playerProfile.value
-        val updated = current.copy(sfxEnabled = sfx, musicEnabled = music, hapticsEnabled = haptics)
+        val updated = current.copy(sfxEnabled = sfx, hapticsEnabled = haptics, reducedMotion = reducedMotion)
         playerRepository.saveProfile(updated)
         refreshProfile()
     }
@@ -397,27 +465,19 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
                 event.coords.forEach { coord ->
                     triggerBurst(coord, colorTriple, 12)
                 }
-                if (event.comboIndex == 0) {
+                if (event.comboIndex == 1) {
                     soundManager.playSound(SoundEffect.MATCH, 0)
                 } else {
                     soundManager.playSound(SoundEffect.CASCADE, event.comboIndex - 1)
                 }
                 soundManager.haptic(HapticEffect.MATCH, event.comboIndex)
 
-                val scoreText = "+${event.coords.size * 50 * (event.comboIndex + 1)}"
-                val firstCoord = event.coords.firstOrNull() ?: Coord(0, 0)
-                addScorePopup(firstCoord, scoreText, Color(0xFFFFD54F))
-
-                if (event.comboIndex >= 2) {
-                    val (title, sub) = when (event.comboIndex) {
-                        2 -> "Sweet!" to "Combo x2"
-                        3 -> "Love Combo!" to "Combo x3"
-                        4 -> "Heart Burst!" to "Combo x4"
-                        else -> "Incredible!" to "Combo x${event.comboIndex}"
-                    }
-                    showComboBanner(title, sub, colorTriple)
-                }
             }
+            is EngineEvent.ScoreStep -> {
+                if (event.points > 0) addScorePopup(event.coord, "+${event.points}", Color(0xFFFFD54F))
+                if (event.multiplier > 1.0) showComboBanner("Lovely cascade!", "×${event.multiplier}", Color(0xFFFFD54F))
+            }
+
             is EngineEvent.SpecialCreated -> {
                 triggerBurst(event.coord, Color(0xFFFFD700), 20)
                 soundManager.playSound(SoundEffect.SPECIAL_CREATED)
@@ -426,8 +486,13 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
             is EngineEvent.SpecialTriggered -> {
                 when (event.specialType) {
                     SpecialHeartType.FIRE_HEART -> {
-                        val isHoriz = event.coord.row % 2 == 0
-                        triggerLaserBeam(isHoriz, if (isHoriz) event.coord.row else event.coord.col, Color(0xFFFF3D00))
+                        val playable = engine.getState().board.getAllPlayableCoords()
+                        event.affectedCoords.groupBy { it.row }.filter { (row, cells) ->
+                            cells.size == playable.count { it.row == row }
+                        }.keys.forEach { triggerLaserBeam(true, it, Color(0xFFFF3D00)) }
+                        event.affectedCoords.groupBy { it.col }.filter { (col, cells) ->
+                            cells.size == playable.count { it.col == col }
+                        }.keys.forEach { triggerLaserBeam(false, it, Color(0xFFFF3D00)) }
                         soundManager.playSound(SoundEffect.SPECIAL_FIRE)
                     }
                     SpecialHeartType.BOMB_HEART -> {
@@ -452,39 +517,57 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
                         triggerBurst(event.coord, Color(0xFFFFF9C4), 28)
                         soundManager.playSound(SoundEffect.STAR_EARNED)
                     }
+                    SpecialHeartType.LIGHT_HEART -> {
+                        triggerBlastWave(event.coord, Color(0xFFFFFDE7))
+                        triggerBurst(event.coord, Color(0xFFFFF3B0), 30)
+                        soundManager.playSound(SoundEffect.SPECIAL_RAINBOW)
+                    }
                 }
                 soundManager.haptic(HapticEffect.SPECIAL_TRIGGERED)
             }
             is EngineEvent.BlockerDamaged -> {
-                triggerBurst(event.coord, Color(0xFFCFD8DC), 10)
+                if (!event.isDestroyed) triggerBurst(event.coord, Color(0xFFCFD8DC), 10)
                 soundManager.playSound(SoundEffect.BLOCKER_HIT)
                 soundManager.haptic(HapticEffect.BLOCKER_HIT)
             }
             is EngineEvent.BlockerDestroyed -> {
-                triggerBurst(event.coord, Color(0xFFFF5252), 20)
+                when (event.blockerType) {
+                    BlockerType.WOODEN_HEART -> triggerDebris(event.coord, DebrisMaterial.WOOD, 16)
+                    BlockerType.STONE_HEART -> triggerDebris(event.coord, DebrisMaterial.STONE, 22)
+                    BlockerType.ICE_HEART -> triggerDebris(event.coord, DebrisMaterial.ICE, 20)
+                    BlockerType.CHAINED_HEART -> triggerBubblePop(event.coord)
+                    else -> triggerBurst(event.coord, Color(0xFFFF5252), 20)
+                }
                 soundManager.playSound(SoundEffect.BLOCKER_DESTROY)
                 soundManager.haptic(HapticEffect.BLOCKER_DESTROY)
             }
             is EngineEvent.GameWon -> {
-                val coinsAwarded = 50 + event.stars * 25
-                playerRepository.saveLevelProgress(engine.getState().levelId, event.stars, event.finalScore)
-                playerRepository.addCoins(coinsAwarded)
+                if (rewarded) return
+                rewarded = true
+                val completedState = engine.getState()
+                val (coinsAwarded, milestone) = playerRepository.completeLevel(completedState.levelId, event.stars, event.finalScore)
                 refreshProfile()
 
-                viewModelScope.launch {
-                    delay(600)
+                resultJob = viewModelScope.launch {
+                    // Keep the board visible until score popups from the final match/cascade finish.
+                    withTimeoutOrNull(1_800) {
+                        _scorePopups.first { it.isEmpty() }
+                    }
+                    delay(200)
                     soundManager.playSound(SoundEffect.VICTORY)
                     soundManager.haptic(HapticEffect.VICTORY)
                     _victoryData.value = VictoryData(
                         levelId = engine.getState().levelId,
                         score = event.finalScore,
                         stars = event.stars,
-                        coinsEarned = coinsAwarded
+                        coinsEarned = coinsAwarded,
+                        breakdown = completedState.scoreBreakdown,
+                        milestone = milestone
                     )
                 }
             }
             is EngineEvent.GameOver -> {
-                viewModelScope.launch {
+                resultJob = viewModelScope.launch {
                     delay(500)
                     soundManager.playSound(SoundEffect.GAME_OVER)
                     soundManager.haptic(HapticEffect.GAME_OVER)
@@ -502,7 +585,8 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
         hintJob?.cancel()
         hintJob = viewModelScope.launch {
             delay(5000)
-            val possible = engine.getPossibleMoves()
+            if (_selectedCoord.value != null || _activeBooster.value != null || _isPaused.value || _currentScreen.value != Screen.Gameplay || engine.getState().status != GameStatus.READY_FOR_INPUT) return@launch
+            val possible = engine.getRankedMoves()
             if (possible.isNotEmpty()) {
                 val (from, to) = possible.first()
                 _hintedCoords.value = listOf(from, to)
@@ -518,6 +602,37 @@ class HeartMatchViewModel(application: Application) : AndroidViewModel(applicati
             origin = center,
             color = color,
             particles = createBurstParticles(center, color, count)
+        )
+        _particleBursts.value = _particleBursts.value + burst
+    }
+
+    private fun triggerDebris(coord: Coord, material: DebrisMaterial, count: Int) {
+        val board = _gameState.value?.board ?: return
+        val cellSize = 300f / maxOf(board.cols, 1)
+        val center = Offset((coord.col + 0.5f) * cellSize, (coord.row + 0.5f) * cellSize)
+        val baseColor = when (material) {
+            DebrisMaterial.WOOD -> Color(0xFFAA682F)
+            DebrisMaterial.STONE -> Color(0xFF777781)
+            DebrisMaterial.ICE -> Color(0xFF9DEBFF)
+        }
+        val burst = ParticleBurst(
+            origin = center,
+            color = baseColor,
+            particles = createDebrisParticles(center, material, count)
+        )
+        _particleBursts.value = _particleBursts.value + burst
+    }
+
+    private fun triggerBubblePop(coord: Coord) {
+        val board = _gameState.value?.board ?: return
+        val cellSize = 300f / maxOf(board.cols, 1)
+        val center = Offset((coord.col + 0.5f) * cellSize, (coord.row + 0.5f) * cellSize)
+        val color = Color(0xFFBFE6FF)
+        val burst = ParticleBurst(
+            origin = center,
+            color = color,
+            particles = createBubblePopParticles(center),
+            durationMs = 420
         )
         _particleBursts.value = _particleBursts.value + burst
     }

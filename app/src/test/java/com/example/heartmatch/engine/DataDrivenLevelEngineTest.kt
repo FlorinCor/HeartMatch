@@ -79,7 +79,10 @@ class DataDrivenLevelEngineTest {
         // Swap (2, 2) RED into (1, 2) to complete match with (1, 1) and (1, 3) adjacent/hitting BR(RED)
         val result = engine.swap(Coord(2, 2), Coord(1, 2))
         assertTrue(result.isSuccessfulMove)
-        assertTrue("Repair objective should be fulfilled", obj.isFulfilled)
+        assertFalse("A damage hit is not a complete repair", obj.isFulfilled)
+        val broken = engine.getState().board.getAllPlayableCoords().first { (engine.getState().board.getTile(it) as? Tile.Blocker)?.blockerType == BlockerType.BROKEN_HEART }
+        engine.applyHammer(broken)
+        assertTrue("Removing the last layer counts a repair", obj.isFulfilled)
     }
 
     @Test

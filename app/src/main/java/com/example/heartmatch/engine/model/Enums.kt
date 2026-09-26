@@ -16,7 +16,8 @@ enum class SpecialHeartType {
     BOMB_HEART,    // Area explosion with configurable radius (T or L shape)
     GIFT_HEART,    // Bonus points and reward effects
     ROYAL_HEART,   // Crowned jewel heart with cross/diamond area blast
-    ANGEL_HEART    // Winged celestial heart with holy blast / objective blessing
+    ANGEL_HEART,   // Winged celestial heart with holy blast / objective blessing
+    LIGHT_HEART    // Radiant heart that clears the surrounding 3x3 area (large multi-line match)
 }
 
 enum class FireDirection {

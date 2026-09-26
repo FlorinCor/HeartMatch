@@ -1,0 +1,36 @@
+{
+  "id": 186,
+  "name": "Everheart Citadel: Coral Switchback",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "I(YELLOW)", "O", "O", "I(YELLOW)", "O", "O", "O"],
+      ["O", "O", "O", "I(YELLOW)", "O", "O", "I(YELLOW)", "O", "O"],
+      ["O", "O", "I(YELLOW)", "O", "O", "W2", "O", "O", "O"],
+      ["O", "O", "O", "W2", "O", "O", "W2", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 22,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW", "PURPLE"],
+  "starThresholds": [43500, 67500, 97500],
+  "randomSeed": 186,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "ICE",
+      "amount": 5
+    },
+    {
+      "type": "DESTROY",
+      "heartType": "WOODEN",
+      "amount": 3
+    }
+  ]
+}

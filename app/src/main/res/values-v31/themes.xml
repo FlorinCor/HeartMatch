@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.HeartMatch" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#10251F</item>
+        <item name="android:windowSplashScreenBackground">#10251F</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#10251F</item>
+        <item name="android:navigationBarColor">#10251F</item>
+    </style>
+</resources>

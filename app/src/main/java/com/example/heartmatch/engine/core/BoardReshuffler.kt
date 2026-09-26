@@ -55,10 +55,13 @@ class BoardReshuffler(
             }
         }
 
+        // Regeneration must never erase gifts, specials, or movable repair objectives.
+        movableCoords.forEachIndexed { index, coord -> board.setTile(coord, originalTiles[index]) }
+        val normalCoords = movableCoords.filter { board.getTile(it) is Tile.Normal }
         // Attempt 2: Regeneration with non-matching color assignment + guaranteed valid move injection
         for (attempt in 0 until 100) {
             // Reassign random colors avoiding immediate 3-matches
-            for (coord in movableCoords) {
+            for (coord in normalCoords) {
                 val forbidden = mutableSetOf<HeartColor>()
                 val r = coord.row
                 val c = coord.col
@@ -83,7 +86,7 @@ class BoardReshuffler(
                     return true
                 }
                 // Try to inject a guaranteed match-3 move by creating an almost-match
-                if (injectGuaranteedMove(board, movableCoords, allowedColors, rng)) {
+                if (injectGuaranteedMove(board, normalCoords, allowedColors, rng)) {
                     if (matchDetector.detectMatches(board).isEmpty() && hasValidMoves(board)) {
                         return true
                     }
@@ -91,7 +94,8 @@ class BoardReshuffler(
             }
         }
 
-        return hasValidMoves(board)
+        movableCoords.forEachIndexed { index, coord -> board.setTile(coord, originalTiles[index]) }
+        return false
     }
 
     private fun injectGuaranteedMove(

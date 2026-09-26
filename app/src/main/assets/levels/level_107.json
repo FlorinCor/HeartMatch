@@ -1,0 +1,35 @@
+{
+  "id": 107,
+  "name": "Crystal Cove: Silver Shoals",
+  "difficulty": "EXPERT",
+  "board": {
+    "rows": 9,
+    "columns": 9,
+    "grid": [
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "S2", "O", "O", "O", "S2", "O", "O"],
+      ["O", "O", "O", "S2", "O", "BR(PINK)", "O", "O", "O"],
+      ["O", "O", "BR(PINK)", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
+      ["O", "O", "O", "O", "O", "O", "O", "O", "O"]
+    ]
+  },
+  "moves": 26,
+  "availableColors": ["RED", "PINK", "BLUE", "GREEN", "YELLOW"],
+  "starThresholds": [29800, 47800, 71800],
+  "randomSeed": 107,
+  "objectives": [
+    {
+      "type": "DESTROY",
+      "heartType": "STONE",
+      "amount": 3
+    },
+    {
+      "type": "REPAIR",
+      "amount": 2
+    }
+  ]
+}
